@@ -1,0 +1,14 @@
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+
+# Environments
+.venv/
+venv/
+
+# Django / SQLite
+db.sqlite3
+
+# VSCode / editor junk
+.vscode/
+*.log

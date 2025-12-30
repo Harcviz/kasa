@@ -1,0 +1,247 @@
+{% extends "ledger/base.html" %}
+{% load money %}
+{% block title %}{{ account.label }} Detay{% endblock %}
+
+{% block content %}
+    <div id="print-area" class="glass rounded-xl p-5 border border-emerald-400/20 space-y-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-slate-300">Kasa</p>
+                <h2 class="text-2xl font-semibold">{{ account.label }} Detayı</h2>
+                <p class="text-xs text-slate-400">Toplam bakiye: {{ summary.net|money }} ₺</p>
+            </div>
+            <a href="{% url 'dashboard' %}" class="text-xs px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20">Panele dön</a>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-3">
+            <div class="glass rounded-lg p-3 border border-white/10">
+                <p class="text-slate-300 text-sm">Gelir (toplam)</p>
+                <p class="text-xl font-semibold text-emerald-300">{{ summary.incoming|money }} ₺</p>
+            </div>
+            <div class="glass rounded-lg p-3 border border-white/10">
+                <p class="text-slate-300 text-sm">Gider (toplam)</p>
+                <p class="text-xl font-semibold text-rose-300">{{ summary.outgoing|money }} ₺</p>
+            </div>
+            <div class="glass rounded-lg p-3 border border-white/10">
+                <p class="text-slate-300 text-sm">Net</p>
+                <p class="text-xl font-semibold">{{ summary.net|money }} ₺</p>
+            </div>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-3">
+            <div class="glass rounded-lg p-3 border border-emerald-400/30">
+                <p class="text-slate-300 text-sm">Dünkü devir</p>
+                <p class="text-lg font-semibold text-emerald-200">{{ prev_carry|money }} ₺</p>
+            </div>
+            <div class="glass rounded-lg p-3 border border-white/10">
+                <p class="text-slate-300 text-sm">Bugün</p>
+                <p class="text-sm text-emerald-300">Gelir: {{ today_in|money }} ₺</p>
+                <p class="text-sm text-rose-300">Gider: {{ today_out|money }} ₺</p>
+                <p class="text-sm font-semibold {% if today_net >= 0 %}text-emerald-300{% else %}text-rose-300{% endif %}">Net: {{ today_net|money }} ₺</p>
+            </div>
+            <div class="glass rounded-lg p-3 border border-emerald-400/30">
+                <p class="text-slate-300 text-sm">Gün sonu (devir + bugün)</p>
+                <p class="text-lg font-semibold {% if today_balance >= 0 %}text-emerald-200{% else %}text-rose-300{% endif %}">{{ today_balance|money }} ₺</p>
+            </div>
+        </div>
+
+        <div class="glass rounded-lg p-4 border border-white/10">
+            <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+                <h3 class="text-lg font-semibold">Hızlı raporlar</h3>
+                <div class="flex gap-2 items-center flex-wrap">
+                    <form method="get" class="flex items-center gap-2 text-xs">
+                        <label class="text-slate-300">Günlük tarih:</label>
+                        <input type="date" name="day" value="{{ selected_day|date:'Y-m-d' }}" class="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs" onchange="this.form.submit()">
+                    </form>
+                    <button onclick="printRange('haftalik')" class="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs">Haftalık Yazdır</button>
+                    <button onclick="printRange('aylik')" class="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs">Aylık Yazdır</button>
+                    <button onclick="printRange('yillik')" class="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs">Yıllık Yazdır</button>
+                </div>
+            </div>
+            <div class="grid md:grid-cols-4 gap-3 text-sm">
+                <div class="glass rounded-lg p-3 border border-white/5">
+                    <p class="text-slate-300 text-xs">Günlük ({{ selected_day|date:"d.m.Y" }})</p>
+                    <p class="text-sm text-emerald-300">Gelir: {{ daily_in|money }} ₺</p>
+                    <p class="text-sm text-rose-300">Gider: {{ daily_out|money }} ₺</p>
+                    <p class="text-sm font-semibold {% if daily_net >= 0 %}text-emerald-300{% else %}text-rose-300{% endif %}">Net: {{ daily_net|money }} ₺</p>
+                    <p class="text-xs text-slate-400 mt-1">Kapanış: {{ daily_closing|money }} ₺</p>
+                </div>
+                <div class="glass rounded-lg p-3 border border-white/5">
+                    <p class="text-slate-300 text-xs">Haftalık</p>
+                    <p class="text-sm text-emerald-300">Gelir: {{ ranges.0.incoming|money }} ₺</p>
+                    <p class="text-sm text-rose-300">Gider: {{ ranges.0.outgoing|money }} ₺</p>
+                    <p class="text-sm font-semibold {% if ranges.0.net >= 0 %}text-emerald-300{% else %}text-rose-300{% endif %}">Net: {{ ranges.0.net|money }} ₺</p>
+                    <p class="text-xs text-slate-400 mt-1">Kapanış: {{ weekly_closing|money }} ₺</p>
+                </div>
+                <div class="glass rounded-lg p-3 border border-white/5">
+                    <p class="text-slate-300 text-xs">Aylık</p>
+                    <p class="text-sm text-emerald-300">Gelir: {{ ranges.1.incoming|money }} ₺</p>
+                    <p class="text-sm text-rose-300">Gider: {{ ranges.1.outgoing|money }} ₺</p>
+                    <p class="text-sm font-semibold {% if ranges.1.net >= 0 %}text-emerald-300{% else %}text-rose-300{% endif %}">Net: {{ ranges.1.net|money }} ₺</p>
+                    <p class="text-xs text-slate-400 mt-1">Kapanış: {{ monthly_closing|money }} ₺</p>
+                </div>
+                <div class="glass rounded-lg p-3 border border-white/5">
+                    <p class="text-slate-300 text-xs">Yıllık</p>
+                    <p class="text-sm text-emerald-300">Gelir: {{ ranges.2.incoming|money }} ₺</p>
+                    <p class="text-sm text-rose-300">Gider: {{ ranges.2.outgoing|money }} ₺</p>
+                    <p class="text-sm font-semibold {% if ranges.2.net >= 0 %}text-emerald-300{% else %}text-rose-300{% endif %}">Net: {{ ranges.2.net|money }} ₺</p>
+                    <p class="text-xs text-slate-400 mt-1">Ay bazlı kapanışlar yazdırmada gösterilir.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="overflow-auto max-h-[60vh]">
+            <table class="min-w-full text-sm">
+                <thead class="text-slate-300">
+                    <tr>
+                        <th class="text-left pb-2">Tarih (Son 5)</th>
+                        <th class="text-left pb-2">Açıklama</th>
+                        <th class="text-left pb-2">Cari</th>
+                        <th class="text-right pb-2">Tutar</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    {% for tx in transactions|slice:":5" %}
+                        <tr>
+                            <td class="py-2 text-slate-300">{{ tx.timestamp|date:"d.m.Y H:i" }}</td>
+                            <td class="py-2">{{ tx.description|default:"-" }}</td>
+                            <td class="py-2 text-slate-300">{{ tx.counterparty|default:"-" }}</td>
+                            <td class="py-2 text-right {% if tx.direction == 'IN' %}text-emerald-300{% else %}text-rose-300{% endif %}">
+                                {% if tx.direction == 'OUT' %}-{% endif %}{{ tx.amount|money }} ₺
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="4" class="py-4 text-center text-slate-400">Kayıt yok</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="print-haftalik" class="hidden">
+        <h3>{{ account.label }} (Nakit Kasa) - Haftalık Liste</h3>
+        <table class="min-w-full text-sm" style="width:100%;border-collapse:collapse;">
+            <thead>
+                <tr>
+                    <th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:6px;">Tarih</th>
+                    <th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:6px;">Açıklama</th>
+                    <th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:6px;">Cari</th>
+                    <th style="text-align:right;border-bottom:1px solid #e5e7eb;padding:6px;">Gelir</th>
+                    <th style="text-align:right;border-bottom:1px solid #e5e7eb;padding:6px;">Gider</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tx in weekly_transactions %}
+                    <tr>
+                        <td style="padding:6px;border-bottom:1px solid #e5e7eb;">{{ tx.timestamp|date:"d.m.Y H:i" }}</td>
+                        <td style="padding:6px;border-bottom:1px solid #e5e7eb;">{{ tx.description|default:"-" }}</td>
+                        <td style="padding:6px;border-bottom:1px solid #e5e7eb;">{{ tx.counterparty|default:"-" }}</td>
+                        <td style="padding:6px;text-align:right;border-bottom:1px solid #e5e7eb;">{% if tx.direction == 'IN' %}{{ tx.amount|money }} ₺{% endif %}</td>
+                        <td style="padding:6px;text-align:right;border-bottom:1px solid #e5e7eb;">{% if tx.direction == 'OUT' %}{{ tx.amount|money }} ₺{% endif %}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5" style="padding:8px;text-align:center;">Kayıt yok</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <p style="margin-top:10px;font-weight:600;">Haftalık kapanış (Nakit): {{ weekly_closing|money }} ₺</p>
+    </div>
+
+    <div id="print-aylik" class="hidden">
+        <h3>{{ account.label }} (Nakit Kasa) - Aylık Liste</h3>
+        <table class="min-w-full text-sm" style="width:100%;border-collapse:collapse;">
+            <thead>
+                <tr>
+                    <th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:6px;">Tarih</th>
+                    <th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:6px;">Açıklama</th>
+                    <th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:6px;">Cari</th>
+                    <th style="text-align:right;border-bottom:1px solid #e5e7eb;padding:6px;">Gelir</th>
+                    <th style="text-align:right;border-bottom:1px solid #e5e7eb;padding:6px;">Gider</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tx in monthly_transactions %}
+                    <tr>
+                        <td style="padding:6px;border-bottom:1px solid #e5e7eb;">{{ tx.timestamp|date:"d.m.Y H:i" }}</td>
+                        <td style="padding:6px;border-bottom:1px solid #e5e7eb;">{{ tx.description|default:"-" }}</td>
+                        <td style="padding:6px;border-bottom:1px solid #e5e7eb;">{{ tx.counterparty|default:"-" }}</td>
+                        <td style="padding:6px;text-align:right;border-bottom:1px solid #e5e7eb;">{% if tx.direction == 'IN' %}{{ tx.amount|money }} ₺{% endif %}</td>
+                        <td style="padding:6px;text-align:right;border-bottom:1px solid #e5e7eb;">{% if tx.direction == 'OUT' %}{{ tx.amount|money }} ₺{% endif %}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5" style="padding:8px;text-align:center;">Kayıt yok</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <p style="margin-top:10px;font-weight:600;">Aylık kapanış (Nakit): {{ monthly_closing|money }} ₺</p>
+    </div>
+
+    <div id="print-yillik" class="hidden">
+        <h3>{{ account.label }} (Nakit Kasa) - Yıllık Ay Kapanışları</h3>
+        <table class="min-w-full text-sm" style="width:100%;border-collapse:collapse;">
+            <thead>
+                <tr>
+                    <th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:6px;">Ay</th>
+                    <th style="text-align:right;border-bottom:1px solid #e5e7eb;padding:6px;">Kapanış</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for name, closing in month_closures %}
+                    <tr>
+                        <td style="padding:6px;border-bottom:1px solid #e5e7eb;">{{ name }}</td>
+                        <td style="padding:6px;text-align:right;border-bottom:1px solid #e5e7eb;">{{ closing|money }} ₺</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="2" style="padding:8px;text-align:center;">Kayıt yok</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function printRange(label) {
+            const areaId = label === 'haftalik'
+                ? 'print-haftalik'
+                : label === 'aylik'
+                ? 'print-aylik'
+                : label === 'yillik'
+                ? 'print-yillik'
+                : 'print-area';
+            const area = document.getElementById(areaId);
+            if (!area) return;
+            const preview = document.createElement('div');
+            preview.className = 'fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-6 print-overlay';
+            preview.innerHTML = `
+              <div class="glass w-full max-w-6xl max-h-[90vh] overflow-auto rounded-xl border border-white/15 shadow-2xl p-6 space-y-4">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <h2 class="text-xl font-semibold">${label} Rapor | {{ account.label }} (Nakit Kasa)</h2>
+                    <p class="text-xs text-slate-400">Yazdır'a basınca tarayıcı diyalogu açılır.</p>
+                  </div>
+                  <div class="flex gap-2">
+                    <button id="print-run" class="px-4 py-2 rounded-lg bg-emerald-500 text-black font-semibold hover:bg-emerald-400">Yazdır</button>
+                    <button id="print-close" class="px-4 py-2 rounded-lg bg-white/10 border border-white/20 hover:bg-white/20">Kapat</button>
+                  </div>
+                </div>
+                <div class="bg-slate-900/50 border border-white/10 rounded-lg p-4" id="print-preview"></div>
+              </div>
+            `;
+            document.body.appendChild(preview);
+            document.body.classList.add('print-active');
+            const cleanup = () => {
+                document.body.classList.remove('print-active');
+                preview.remove();
+                window.removeEventListener('afterprint', cleanup);
+            };
+            const container = preview.querySelector('#print-preview');
+            container.innerHTML = area.innerHTML;
+            const runBtn = preview.querySelector('#print-run');
+            const closeBtn = preview.querySelector('#print-close');
+            closeBtn.addEventListener('click', cleanup);
+            window.addEventListener('afterprint', cleanup);
+            runBtn.addEventListener('click', () => {
+                window.print();
+            });
+        }
+    </script>
+{% endblock %}

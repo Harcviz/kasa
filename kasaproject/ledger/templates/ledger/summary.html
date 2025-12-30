@@ -1,0 +1,187 @@
+{% extends "ledger/base.html" %}
+{% load money %}
+{% block title %}Gelir/Gider Özeti{% endblock %}
+
+{% block content %}
+<div class="grid gap-6" id="summary-print">
+    <div class="screen-layout grid gap-6">
+        <section class="grid gap-4">
+            <div class="glass rounded-xl p-6 border border-emerald-400/20 shadow-lg">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <p class="text-sm text-slate-300">Dönem</p>
+                        <h2 class="text-2xl font-semibold">Gelir / Gider Özeti</h2>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2 print-hide">
+                        <form method="get" class="flex flex-wrap items-center gap-2 text-sm">
+                            <label class="flex items-center gap-1">
+                                <span class="text-xs text-slate-400">Başlangıç</span>
+                                <input type="date" name="start" value="{{ start_date|date:'Y-m-d' }}" class="rounded-lg bg-slate-800 border border-slate-700 px-2 py-1 text-xs">
+                            </label>
+                            <label class="flex items-center gap-1">
+                                <span class="text-xs text-slate-400">Bitiş</span>
+                                <input type="date" name="end" value="{{ end_date|date:'Y-m-d' }}" class="rounded-lg bg-slate-800 border border-slate-700 px-2 py-1 text-xs">
+                            </label>
+                            <button type="submit" class="px-3 py-2 rounded-lg bg-white/10 border border-emerald-400/40 hover:bg-emerald-500/20">Uygula</button>
+                        </form>
+                        <span class="text-sm px-3 py-1 rounded-full bg-white/10 border border-white/15">{{ month_label }}</span>
+                        <button type="button" onclick="openSummaryPrint()" class="px-3 py-2 rounded-lg bg-white/10 border border-emerald-400/40 hover:bg-emerald-500/20 text-sm">Yazdır</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-4">
+                <div class="glass p-4 rounded-lg border border-white/10">
+                    <p class="text-xs text-slate-400">Toplam Gelir</p>
+                    <p class="text-2xl font-semibold text-emerald-300">{{ income_total|money }} TL</p>
+                </div>
+                <div class="glass p-4 rounded-lg border border-white/10">
+                    <p class="text-xs text-slate-400">Toplam Gider</p>
+                    <p class="text-2xl font-semibold text-rose-300">{{ expense_total|money }} TL</p>
+                </div>
+                <div class="glass p-4 rounded-lg border border-white/10">
+                    <p class="text-xs text-slate-400">Net</p>
+                    <p class="text-2xl font-semibold {% if net_total >= 0 %}text-emerald-300{% else %}text-rose-300{% endif %}">
+                        {{ net_total|money }} TL
+                    </p>
+                </div>
+            </div>
+
+            <p class="text-xs text-slate-400">Hissedar giderleri kasa toplamından düşülmez, ancak ilgili gider kategorilerinde raporlanır.</p>
+        </section>
+
+        <section class="grid md:grid-cols-2 gap-4">
+            <div class="glass rounded-xl p-5 border border-emerald-400/20 space-y-3">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold">Gelirler</h3>
+                    <span class="text-xs text-slate-400">Kategori bazlı dağılım</span>
+                </div>
+                {% if income_rows %}
+                    <div class="space-y-2">
+                        {% for row in income_rows %}
+                            <div>
+                                <div class="flex items-center justify-between text-sm">
+                                    <span>{{ row.name }}</span>
+                                    <span class="text-emerald-200 font-semibold">{{ row.amount|money }} TL</span>
+                                </div>
+                                <div class="w-full h-2 rounded-full bg-white/5 overflow-hidden mt-1">
+                                    <div class="h-2 bg-emerald-400/60" style="width: {{ row.percent|floatformat:2|default_if_none:'0' }}%;"></div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-sm text-slate-400">Bu dönemde gelir kaydı yok.</p>
+                {% endif %}
+            </div>
+            <div class="glass rounded-xl p-5 border border-rose-400/20 space-y-3">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold">Giderler</h3>
+                    <span class="text-xs text-slate-400">Kategori bazlı dağılım</span>
+                </div>
+                {% if expense_rows %}
+                    <div class="space-y-2">
+                        {% for row in expense_rows %}
+                            <div>
+                                <div class="flex items-center justify-between text-sm">
+                                    <span>{{ row.name }}</span>
+                                    <span class="text-rose-200 font-semibold">{{ row.display_amount|money }} TL</span>
+                                </div>
+                                <div class="w-full h-2 rounded-full bg-white/5 overflow-hidden mt-1">
+                                    <div class="h-2 bg-rose-400/60" style="width: {{ row.percent|floatformat:2|default_if_none:'0' }}%;"></div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-sm text-slate-400">Bu dönemde gider kaydı yok.</p>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+@media print {
+    @page { size: A4 landscape; margin: 8mm; }
+    body {
+        background: #0f172a;
+        color: #e2e8f0;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+        font-size: 11px;
+    }
+    header { display: none !important; }
+    html, body { width: 100%; height: auto; margin: 0; padding: 0; }
+    #summary-print {
+        page-break-inside: avoid;
+        padding: 0;
+        margin: 0;
+        transform: scale(0.9);
+        transform-origin: top left;
+        width: 111%;
+    }
+    .screen-layout { display: grid !important; gap: 10px !important; font-size: 11px; }
+    .screen-layout h2 { font-size: 16px !important; }
+    .screen-layout h3 { font-size: 13px !important; }
+    .screen-layout .text-2xl { font-size: 16px !important; }
+    .screen-layout .text-lg { font-size: 13px !important; }
+    .screen-layout .text-sm { font-size: 10px !important; }
+    .screen-layout .text-xs { font-size: 9px !important; }
+    .screen-layout .text-base { font-size: 11px !important; }
+    .print-layout { display: none !important; }
+    .print-hide { display: none !important; }
+    .glass {
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.12);
+        box-shadow: none;
+    }
+    .grid { gap: 10px !important; }
+    .space-y-3 > * + * { margin-top: 6px !important; }
+}
+.print-layout { display: none; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openSummaryPrint() {
+    const area = document.getElementById('summary-print');
+    if (!area) return;
+    const overlay = document.createElement('div');
+    overlay.className = 'fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-6 print-overlay';
+    overlay.innerHTML = `
+      <div class="glass w-full max-w-6xl max-h-[90vh] overflow-auto rounded-xl border border-white/15 shadow-2xl p-6 space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-xl font-semibold">Gelir / Gider Özeti</h2>
+            <p class="text-xs text-slate-400">Yazdır'a basınca tarayıcı diyalogu açılır.</p>
+          </div>
+          <div class="flex gap-2">
+            <button id="print-run" class="px-4 py-2 rounded-lg bg-emerald-500 text-black font-semibold hover:bg-emerald-400">Yazdır</button>
+            <button id="print-close" class="px-4 py-2 rounded-lg bg-white/10 border border-white/20 hover:bg-white/20">Kapat</button>
+          </div>
+        </div>
+        <div class="bg-slate-900/50 border border-white/10 rounded-lg p-4" id="print-preview"></div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    document.body.classList.add('print-active');
+    const preview = overlay.querySelector('#print-preview');
+    preview.innerHTML = area.innerHTML;
+    const cleanup = () => {
+        document.body.classList.remove('print-active');
+        overlay.remove();
+        window.removeEventListener('afterprint', cleanup);
+    };
+    overlay.querySelector('#print-close').addEventListener('click', cleanup);
+    window.addEventListener('afterprint', cleanup);
+    overlay.querySelector('#print-run').addEventListener('click', () => {
+        window.print();
+    });
+}
+</script>
+{% endblock %}

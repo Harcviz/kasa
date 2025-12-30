@@ -1,0 +1,329 @@
+{% extends "ledger/base.html" %}
+{% load money %}
+{% block title %}Kasa Paneli{% endblock %}
+
+{% block content %}
+    <div class="grid md:grid-cols-3 gap-6">
+        <div class="md:col-span-2 glass rounded-xl p-6 shadow-lg border border-emerald-400/10 space-y-4">
+            <div>
+                <p class="text-slate-300 text-sm">Hızlı kayıt</p>
+                <h2 class="text-xl font-semibold">Gelir / Gider</h2>
+                <p class="text-xs text-slate-400">Tarih ve saat otomatik alınır.</p>
+            </div>
+
+            <form method="post" id="quick-form" class="mt-5 space-y-5">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add" id="form-action">
+                <input type="hidden" name="direction" id="direction-hidden" value="IN">
+                <input type="hidden" name="account" value="CASH">
+
+                <div class="grid md:grid-cols-3 gap-5">
+                    <label class="md:col-span-1 block text-sm space-y-1 relative z-0">
+                        <span>Tutar</span>
+                        <div class="relative">
+                            <input type="number" step="0.01" required name="amount" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 pr-12" placeholder="0.00">
+                            <span class="absolute inset-y-0 right-2 flex items-center text-xs text-slate-400 pointer-events-none">₺</span>
+                        </div>
+                    </label>
+                    <label class="md:col-span-2 block text-sm space-y-1">
+                        <span>Açıklama</span>
+                        <input type="text" name="description" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2" placeholder="örn: Tahsilat, ödeme...">
+                    </label>
+                </div>
+
+                <div class="grid md:grid-cols-1 gap-5">
+                    <div class="glass border border-emerald-500/20 rounded-lg p-4 space-y-3">
+                        <p class="text-sm mb-2">Kalem (Gelir/Gider)</p>
+                        <div class="space-y-2">
+                            <div class="relative z-40">
+                                <div class="flex gap-2">
+                                    <input autocomplete="off" name="cash_category_name" id="cash-category-input" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm" placeholder="Kalem yaz veya seç (ör: Tahsilat, Kira)">
+                                    <button type="button" id="cash-category-toggle" class="px-3 py-2 text-xs rounded-lg bg-white/10 border border-emerald-400/40 hover:bg-emerald-500/20 transition">Liste</button>
+                                </div>
+                                <div id="cash-category-dropdown" class="hidden absolute z-50 mt-1 w-full max-h-64 overflow-auto bg-slate-900 text-white border border-white/15 rounded-lg shadow-lg" style="position:absolute;">
+                                    {% for cat in cash_categories %}
+                                        <button type="button" class="cat-option flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-white/10" data-name="{{ cat.name }}" data-id="{{ cat.id }}" data-direction="{{ cat.direction }}">
+                                            <span class="text-white">{{ cat.name }}</span>
+                                            <span class="text-xs {% if cat.direction == 'IN' %}text-emerald-300{% else %}text-rose-300{% endif %}">
+                                                ({{ cat.get_direction_display }})
+                                            </span>
+                                        </button>
+                                    {% endfor %}
+                                    <div class="px-3 py-2 text-xs text-slate-400" id="cat-empty" style="display:none;">Yeni kalem eklemek için yazıp “Kalem Ekle”ye basabilirsin.</div>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <button type="button" data-cat-dir="IN" class="cat-dir-pill px-3 py-2 text-xs rounded-lg bg-white/5 border border-emerald-400/30 hover:bg-emerald-500/15 transition">Gelir</button>
+                                <button type="button" data-cat-dir="OUT" class="cat-dir-pill px-3 py-2 text-xs rounded-lg bg-white/5 border border-rose-400/30 hover:bg-rose-500/15 transition">Gider</button>
+                                <button type="button" id="add-cash-category" class="px-3 py-2 text-xs rounded-lg bg-white/10 border border-emerald-400/40 hover:bg-emerald-500/20 transition">Kalem Ekle</button>
+                            </div>
+                        </div>
+                        <input type="hidden" name="cash_category_id" id="cash-category-id">
+                        <input type="hidden" name="cash_category_direction" id="cash-category-direction">
+                        <div class="text-[11px] text-slate-500">Kalem seçersen yön otomatik set edilir, açıklama boşsa kalem adı yazılır. Listede yoksa yazıp “Kalem Ekle” ile kaydedebilirsin.</div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <button type="submit" class="px-7 py-2.5 rounded-lg bg-emerald-500 text-black font-semibold hover:bg-emerald-400 transition">Kaydet</button>
+                    <p class="text-xs text-slate-400">Tarih/Saat: {{ now|date:"d.m.Y H:i" }}</p>
+                </div>
+            </form>
+
+            {% if message %}
+                <div class="mt-4 px-4 py-2 rounded-lg bg-emerald-500/20 border border-emerald-400/30 text-sm" data-toast>{{ message }}</div>
+            {% endif %}
+            {% if error %}
+                <div class="mt-2 px-4 py-2 rounded-lg bg-rose-500/20 border border-rose-400/30 text-sm">{{ error }}</div>
+            {% endif %}
+        </div>
+
+        <div class="space-y-5">
+            <div class="glass rounded-xl p-6 border border-emerald-400/20 shadow-lg space-y-5">
+                <div>
+                    <p class="text-sm text-slate-300">Genel Bakiye</p>
+                    <h3 class="text-3xl font-semibold text-emerald-300">{{ overall_with_auto|money }} ₺</h3>
+                    <p class="text-xs text-slate-400">Tüm hesapların toplamı</p>
+                </div>
+                <div class="space-y-4">
+                    {% for card in account_cards %}
+                        <div class="glass rounded-lg p-4 border border-white/10">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="text-sm text-slate-300">{{ card.label }}</p>
+                                    <p class="text-lg font-semibold">{{ card.overall.net|money }} ₺</p>
+                                    <p class="text-xs text-slate-400">Bugün: +{{ card.today.incoming|money }} / -{{ card.today.outgoing|money }}</p>
+                                    {% if card.code == 'CASH' %}
+                                        <p class="text-[11px] text-slate-500">Dünkü devir: {{ prev_closing.CASH.net|money }} ₺</p>
+                                    {% endif %}
+                                </div>
+                                {% if card.code == 'BANK_AUTO' %}
+                                    <a href="{% url 'bank_auto' %}" class="text-xs px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20">Detay</a>
+                                {% else %}
+                                    <a href="{% url 'account_detail' card.code %}" class="text-xs px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20">Detay</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="glass rounded-xl p-6 border border-emerald-400/20 shadow-lg space-y-4">
+                <div>
+                    <p class="text-sm text-slate-300">Devir Özeti</p>
+                    <p class="text-xs text-slate-400">Bir önceki kapanış + otomatik kasa</p>
+                </div>
+                <div class="space-y-2 text-sm text-slate-300">
+                    <div class="flex justify-between">
+                        <span>Nakit</span>
+                        <span class="{% if prev_closing.CASH.net >= 0 %}text-emerald-300{% else %}text-rose-300{% endif %}">{{ prev_closing.CASH.net|money }} ₺</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Banka</span>
+                        <span class="{% if prev_bank_auto >= 0 %}text-emerald-300{% else %}text-rose-300{% endif %}">{{ prev_bank_auto|money }} ₺</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Toplam</span>
+                        <span class="{% if prev_total_with_auto >= 0 %}text-emerald-300{% else %}text-rose-300{% endif %}">{{ prev_total_with_auto|money }} ₺</span>
+                    </div>
+                    <div class="flex justify-between text-xs text-slate-400 pt-1 border-t border-white/5">
+                        <span>Devir</span>
+                        <span class="text-emerald-300">{{ prev_total_with_auto|money }} ₺</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Kasa kalem butonları ile yön/hesap/açıklama otomatik doldur.
+        document.querySelectorAll('.cash-cat-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const direction = btn.getAttribute('data-direction');
+                const desc = btn.getAttribute('data-description') || '';
+                const dirInput = document.querySelector(`input[name="direction"][value="${direction}"]`);
+                if (dirInput) {
+                    dirInput.checked = true;
+                }
+                const accountCash = document.querySelector('input[name="account"][value="CASH"]');
+                if (accountCash) {
+                    accountCash.checked = true;
+                }
+                const descInput = document.querySelector('input[name="description"]');
+                if (descInput) {
+                    descInput.value = desc;
+                    descInput.focus();
+                }
+                const selectCat = document.querySelector('select[name="cash_category"]');
+                if (selectCat) {
+                    selectCat.value = "";
+                }
+            });
+        });
+
+        // Kalem seçimi dropdown ile (datalist yerine kontrollü liste)
+        const catInput = document.getElementById('cash-category-input');
+        const catHidden = document.getElementById('cash-category-id');
+        const catDirectionHidden = document.getElementById('cash-category-direction');
+        const catDropdown = document.getElementById('cash-category-dropdown');
+        const catToggle = document.getElementById('cash-category-toggle');
+        const catOptions = Array.from(document.querySelectorAll('.cat-option'));
+        const catEmpty = document.getElementById('cat-empty');
+
+        const closeCatDropdown = () => catDropdown && catDropdown.classList.add('hidden');
+        const openCatDropdown = () => catDropdown && catDropdown.classList.remove('hidden');
+        const setCat = (name, id, dir) => {
+            if (catInput && name !== undefined) catInput.value = name;
+            if (catHidden) catHidden.value = id || '';
+            if (catDirectionHidden) catDirectionHidden.value = dir || '';
+            if (dir) {
+                const dirInput = document.querySelector(`input[name="direction"][value="${dir}"]`);
+                if (dirInput) dirInput.checked = true;
+                if (typeof setDir === 'function') setDir(dir);
+                const accountCash = document.querySelector('input[name="account"][value="CASH"]');
+                if (accountCash) accountCash.checked = true;
+            }
+            const descInput = document.querySelector('input[name="description"]');
+            if (descInput && name) {
+                const dirLabel = dir === 'IN' ? 'Gelir' : dir === 'OUT' ? 'Gider' : '';
+                descInput.value = dirLabel ? `${name} (${dirLabel})` : name;
+            }
+        };
+
+        catOptions.forEach((btn) => {
+            btn.addEventListener('click', () => {
+                setCat(btn.dataset.name || '', btn.dataset.id || '', btn.dataset.direction || '');
+                closeCatDropdown();
+            });
+        });
+
+        if (catToggle) {
+            catToggle.addEventListener('click', () => {
+                if (catDropdown?.classList.contains('hidden')) {
+                    openCatDropdown();
+                    if (catInput) catInput.focus();
+                } else {
+                    closeCatDropdown();
+                }
+            });
+        }
+
+        const filterCatList = (query) => {
+            const q = (query || '').toLowerCase().trim();
+            let visibleCount = 0;
+            catOptions.forEach((opt) => {
+                const name = (opt.dataset.name || '').toLowerCase();
+                const show = !q || name.includes(q);
+                opt.style.display = show ? 'flex' : 'none';
+                if (show) visibleCount += 1;
+            });
+            if (catEmpty) {
+                catEmpty.style.display = visibleCount ? 'none' : 'block';
+            }
+        };
+
+        if (catInput) {
+            catInput.addEventListener('focus', () => {
+                openCatDropdown();
+                filterCatList(catInput.value);
+            });
+            catInput.addEventListener('input', () => {
+                const val = catInput.value.toLowerCase().trim();
+                openCatDropdown();
+                filterCatList(val);
+                const match = catOptions.find((opt) => (opt.dataset.name || '').toLowerCase() === val);
+                if (match) {
+                    setCat(match.dataset.name || '', match.dataset.id || '', match.dataset.direction || '');
+                } else {
+                    if (catHidden) catHidden.value = '';
+                    if (catDirectionHidden) catDirectionHidden.value = '';
+                    // Açıklamaya kalem + yön yaz
+                    const descInput = document.querySelector('input[name="description"]');
+                    if (descInput && catInput.value) {
+                        descInput.value = `${catInput.value}`;
+                    }
+                }
+            });
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!catDropdown || catDropdown.classList.contains('hidden')) return;
+            if (catDropdown.contains(e.target) || catToggle?.contains(e.target) || catInput?.contains(e.target)) {
+                return;
+            }
+            closeCatDropdown();
+        });
+
+        const dirPills = document.querySelectorAll('.cat-dir-pill');
+        const dirInputs = document.querySelectorAll('input[name="direction"]');
+        const dirHidden = document.getElementById('direction-hidden');
+        function setDir(dir) {
+            dirPills.forEach(pill => {
+                const active = pill.getAttribute('data-cat-dir') === dir;
+                pill.classList.toggle('ring-1', active);
+                pill.classList.toggle('ring-emerald-300', active && dir === 'IN');
+                pill.classList.toggle('ring-rose-300', active && dir === 'OUT');
+                pill.classList.toggle('bg-emerald-500/20', active && dir === 'IN');
+                pill.classList.toggle('bg-rose-500/20', active && dir === 'OUT');
+            });
+            if (catDirectionHidden) catDirectionHidden.value = dir || '';
+            if (dirHidden) dirHidden.value = dir || 'IN';
+        }
+        dirPills.forEach(pill => {
+            pill.addEventListener('click', () => {
+                const dir = pill.getAttribute('data-cat-dir');
+                const radio = document.querySelector(`input[name="direction"][value="${dir}"]`);
+                if (radio) radio.checked = true;
+                setDir(dir);
+            });
+        });
+        dirInputs.forEach(radio => {
+            radio.addEventListener('change', () => setDir(radio.value));
+        });
+        const checkedRadio = document.querySelector('input[name="direction"]:checked');
+        if (checkedRadio) setDir(checkedRadio.value);
+
+        // Kalem ekle butonu: mevcut kalemi ve yönü kaydeder.
+        const addCatBtn = document.getElementById('add-cash-category');
+        const formAction = document.getElementById('form-action');
+        const quickForm = document.getElementById('quick-form');
+        if (addCatBtn && formAction && quickForm && catInput) {
+            addCatBtn.addEventListener('click', () => {
+                const name = catInput.value.trim();
+                if (!name) {
+                    catInput.focus();
+                    return;
+                }
+                const dirInput = document.querySelector('input[name="direction"]:checked');
+                const dirValue = catDirectionHidden && catDirectionHidden.value ? catDirectionHidden.value : (dirInput ? dirInput.value : '');
+                if (dirHidden && !dirValue) {
+                    dirHidden.value = 'IN';
+                } else if (dirHidden && dirValue) {
+                    dirHidden.value = dirValue;
+                }
+                if (catDirectionHidden) catDirectionHidden.value = dirValue;
+                if (!dirValue) {
+                    alert('Lütfen kalemin yönünü (Gelir/Gider) seçin.');
+                    return;
+                }
+                formAction.value = 'add_cash_category';
+                addCatBtn.disabled = true;
+                addCatBtn.textContent = 'Kaydediliyor...';
+                quickForm.submit();
+            });
+        }
+
+        // Normal kayıt gönderiminde action'u add olarak bırak.
+        if (quickForm && formAction) {
+            quickForm.addEventListener('submit', (e) => {
+                if (!e.submitter || e.submitter.id !== 'add-cash-category') {
+                    formAction.value = 'add';
+                }
+                if (dirHidden && !dirHidden.value) {
+                    dirHidden.value = 'IN';
+                }
+            });
+        }
+    </script>
+{% endblock %}

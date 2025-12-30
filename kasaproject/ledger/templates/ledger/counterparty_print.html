@@ -1,0 +1,87 @@
+{% extends "ledger/base.html" %}
+{% block title %}Cariler Yazdır{% endblock %}
+
+{% block content %}
+    <div class="glass rounded-xl p-5 border border-emerald-400/20 space-y-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-slate-300">Yazdırma önizleme</p>
+                <h2 class="text-2xl font-semibold">Cari Özet</h2>
+            </div>
+            <button onclick="printCounterparties()" class="px-4 py-2 rounded-lg bg-emerald-500 text-black font-semibold hover:bg-emerald-400">Yazdır</button>
+        </div>
+
+        <div id="cp-print-area" class="glass rounded-lg border border-white/10 p-4">
+            <h4 class="text-lg font-semibold mb-2">Genel Özet</h4>
+            <table class="min-w-full text-sm">
+                <thead class="text-slate-300">
+                    <tr>
+                        <th class="text-left pb-2">Cari</th>
+                        <th class="text-left pb-2">İletişim</th>
+                        <th class="text-left pb-2">Gelir</th>
+                        <th class="text-left pb-2">Gider</th>
+                        <th class="text-left pb-2">Net</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    {% for cp in cp_print_data %}
+                        <tr>
+                            <td class="py-2">{{ cp.name }}</td>
+                            <td class="py-2 text-slate-300">{{ cp.contact|default:"-" }}</td>
+                            <td class="py-2 text-emerald-300">{{ cp.incoming }} ₺</td>
+                            <td class="py-2 text-rose-300">{{ cp.outgoing }} ₺</td>
+                            <td class="py-2 {% if cp.net >= 0 %}text-emerald-300{% else %}text-rose-300{% endif %}">{{ cp.net }} ₺</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="5" class="py-4 text-center text-slate-400">Kayıt yok</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <h4 class="text-lg font-semibold mt-6 mb-2">Aylık Özet</h4>
+            {% for cp in cp_monthly %}
+                <div class="mt-3">
+                    <p class="font-semibold">{{ cp.name }}</p>
+                    <table class="min-w-full text-sm" style="border-collapse:collapse;">
+                        <thead>
+                            <tr>
+                                <th style="text-align:left;padding:6px;border-bottom:1px solid #e5e7eb;">Ay</th>
+                                <th style="text-align:right;padding:6px;border-bottom:1px solid #e5e7eb;">Gelir</th>
+                                <th style="text-align:right;padding:6px;border-bottom:1px solid #e5e7eb;">Gider</th>
+                                <th style="text-align:right;padding:6px;border-bottom:1px solid #e5e7eb;">Net</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for m in cp.months %}
+                                <tr>
+                                    <td style="padding:6px;border-bottom:1px solid #e5e7eb;">{{ m.name }}</td>
+                                    <td style="padding:6px;text-align:right;border-bottom:1px solid #e5e7eb;">{{ m.incoming }} ₺</td>
+                                    <td style="padding:6px;text-align:right;border-bottom:1px solid #e5e7eb;">{{ m.outgoing }} ₺</td>
+                                    <td style="padding:6px;text-align:right;border-bottom:1px solid #e5e7eb;">{{ m.net }} ₺</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        function printCounterparties() {
+            const area = document.getElementById('cp-print-area');
+            const w = window.open('', '_blank', 'width=850,height=1100');
+            if (!w || !area) return;
+            w.document.write('<html><head><title>Cari Özet</title>');
+            w.document.write('<style>@page{size:A4 portrait;margin:10mm;} body{font-family: Manrope, sans-serif;padding:20px;font-size:15px;} table{width:100%;border-collapse:collapse;font-size:14px;} th,td{padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;} </style>');
+            w.document.write('</head><body>');
+            w.document.write('<h2>Cari Özet</h2>');
+            w.document.write(area.innerHTML);
+            w.document.write('</body></html>');
+            w.document.close();
+            w.focus();
+            w.print();
+            w.close();
+        }
+    </script>
+{% endblock %}

@@ -1,0 +1,232 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="{% static 'favicon.png' %}">
+    <title>{% block title %}Kasa Paneli{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Global font size +4pt (approx 20px) */
+        html { font-size: 20px; }
+        body { font-size: 1rem; }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Manrope', 'ui-sans-serif', 'system-ui'] },
+                    colors: {
+                        emerald: { soft: '#34d399' },
+                        slate: tailwind.colors.slate,
+                    },
+                },
+            },
+            corePlugins: { preflight: true },
+        };
+    </script>
+<style>
+        body { font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif; }
+        .glass { backdrop-filter: blur(12px); background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); }
+        @media print {
+            @page { size: A4 portrait; margin: 8mm; }
+            html, body { width: 100%; height: auto; margin: 0; padding: 0; }
+            body {
+                background: #ffffff !important;
+                color: #0f172a !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+                font-size: 11px;
+            }
+            /* Sadece print-hide/no-print elemanlarını gizle, başlık/logo/özeti göster */
+            .print-hide, .no-print { display: none !important; }
+            body.print-active > * { display: none !important; }
+            body.print-active .print-overlay {
+                display: block !important;
+                position: static !important;
+                height: auto !important;
+                box-shadow: none !important;
+                background: #f7fafc !important;
+                border: 1px solid #e2e8f0 !important;
+            }
+            .glass {
+                background: #f7fafc !important;
+                border: 1px solid #e2e8f0 !important;
+                box-shadow: none !important;
+                page-break-inside: avoid;
+            }
+            #summary-print { transform: scale(0.9); transform-origin: top left; width: 111%; page-break-inside: avoid; padding: 0; margin: 0; }
+            .grid, .flex { gap: 10px !important; }
+            .space-y-3 > * + * { margin-top: 6px !important; }
+            h1 { font-size: 20px !important; }
+            h2 { font-size: 18px !important; }
+            h3 { font-size: 14px !important; }
+            p, span, label, input, button { font-size: 11px !important; }
+            a[href]:after { content: '' !important; }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100">
+    <div class="max-w-7xl mx-auto px-4 py-6 space-y-4">
+        <div class="flex flex-col gap-4">
+            <div class="flex items-start justify-between flex-wrap gap-4">
+                <div class="flex items-center gap-3">
+                    <img src="{% static 'logo.png' %}" alt="Logo" class="h-14 w-auto rounded-lg shadow-md">
+                    <h1 class="text-5xl font-semibold leading-tight">KASA</h1>
+                </div>
+                <p id="clock" class="ml-auto text-right text-xs text-emerald-300 leading-5 w-full md:w-auto"></p>
+                <nav class="glass px-4 py-3 rounded-xl border border-white/10 text-sm flex flex-wrap gap-3 w-full">
+                    <a href="{% url 'dashboard' %}" class="flex flex-1 min-w-[150px] items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-emerald-500/15 transition text-center">
+                        <span class="material-symbols-outlined text-base">home</span> Ana Panel
+                    </a>
+                    <a href="{% url 'account_detail' 'CASH' %}" class="flex flex-1 min-w-[150px] items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-emerald-500/15 transition text-center">
+                        <span class="material-symbols-outlined text-base">account_balance_wallet</span> Nakit Kasa
+                    </a>
+                    <a href="{% url 'bank_auto' %}" class="flex flex-1 min-w-[150px] items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-emerald-500/15 transition text-center">
+                        <span class="material-symbols-outlined text-base">account_balance</span> Banka
+                    </a>
+                    <a href="{% url 'transactions_manage' %}" class="flex flex-1 min-w-[150px] items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-emerald-500/15 transition text-center">
+                        <span class="material-symbols-outlined text-base">list</span> Hareketler
+                    </a>
+                    <a href="{% url 'counterparties' %}" class="flex flex-1 min-w-[150px] items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-emerald-500/15 transition text-center">
+                        <span class="material-symbols-outlined text-base">people</span> Cariler
+                    </a>
+                    <a href="{% url 'stocks' %}" class="flex flex-1 min-w-[150px] items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-emerald-500/15 transition text-center">
+                        <span class="material-symbols-outlined text-base">pie_chart</span> Hisseler
+                    </a>
+                    <a href="{% url 'stock_preview' %}" class="flex flex-1 min-w-[150px] items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-emerald-500/15 transition text-center">
+                        <span class="material-symbols-outlined text-base">calculate</span> Hisse Hesapla
+                    </a>
+                    <a href="{% url 'summary' %}" class="flex flex-1 min-w-[150px] items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-emerald-500/15 transition text-center">
+                        <span class="material-symbols-outlined text-base">insights</span> Özet
+                    </a>
+                </nav>
+            </div>
+
+            <div class="flex-1 space-y-6">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+
+        <!-- Modal confirm -->
+        <div id="confirm-modal" class="hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center px-4">
+            <div class="glass w-full max-w-md rounded-xl border border-emerald-400/30 shadow-2xl p-6 space-y-4">
+                <div class="flex items-start gap-3">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/20 border border-emerald-400/40">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-200" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.053l-7 9.25a.75.75 0 0 1-1.127.075l-3.5-3.5a.75.75 0 1 1 1.06-1.06l2.892 2.892 6.48-8.556a.75.75 0 0 1 1.052-.144Z" clip-rule="evenodd"/></svg>
+                    </div>
+                    <div class="flex-1 space-y-1">
+                        <p class="text-sm text-emerald-300 font-semibold">Onay gerekiyor</p>
+                        <p id="confirm-message" class="text-base text-slate-100">Bu işlemi onaylıyor musun?</p>
+                    </div>
+                    <button type="button" id="confirm-close" class="text-slate-300 hover:text-white text-xl leading-none">&times;</button>
+                </div>
+                <div class="flex gap-3">
+                    <button type="button" id="confirm-approve" class="flex-1 px-4 py-2 rounded-lg bg-emerald-500 text-black font-semibold hover:bg-emerald-400">Evet, onayla</button>
+                    <button type="button" id="confirm-cancel" class="flex-1 px-4 py-2 rounded-lg bg-white/10 text-slate-100 border border-white/20 hover:bg-white/20">Vazgeç</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const clock = document.getElementById('clock');
+        if (clock) {
+            const tick = () => {
+                const now = new Date();
+                const dateStr = now.toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' });
+                const weekday = now.toLocaleDateString('tr-TR', { weekday: 'long' });
+                const timeStr = now.toLocaleTimeString('tr-TR', { timeStyle: 'medium' });
+                clock.innerHTML = `<span>${dateStr}</span><br/><span>${weekday}</span><br/><span>${timeStr}</span>`;
+            };
+            tick();
+            setInterval(tick, 1000);
+        }
+
+        // Themed confirm modal (replaces native confirm)
+        (function attachConfirmModal() {
+            const modal = document.getElementById('confirm-modal');
+            const msg = document.getElementById('confirm-message');
+            const approve = document.getElementById('confirm-approve');
+            const cancel = document.getElementById('confirm-cancel');
+            const closeBtn = document.getElementById('confirm-close');
+            if (!modal || !msg || !approve || !cancel || !closeBtn) return;
+
+            let resolver = null;
+            const hide = () => {
+                modal.classList.add('hidden');
+                resolver = null;
+            };
+            const show = (message) =>
+                new Promise((resolve) => {
+                    resolver = resolve;
+                    msg.textContent = message || 'Bu işlemi onaylıyor musun?';
+                    modal.classList.remove('hidden');
+                    approve.focus();
+                });
+
+            approve.addEventListener('click', () => {
+                if (resolver) resolver(true);
+                hide();
+            });
+            [cancel, closeBtn].forEach((btn) =>
+                btn.addEventListener('click', () => {
+                    if (resolver) resolver(false);
+                    hide();
+                })
+            );
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    if (resolver) resolver(false);
+                    hide();
+                }
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+                    if (resolver) resolver(false);
+                    hide();
+                }
+            });
+
+            const path = window.location.pathname || '';
+            document.querySelectorAll('[data-confirm]').forEach((el) => {
+                const scope = el.dataset.confirmScope || '';
+                if (scope && !path.includes(scope)) return;
+                el.addEventListener('click', async (e) => {
+                    if (el.dataset.confirmBypass === '1') return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const ok = await show(el.dataset.confirm || 'Bu işlemi onaylıyor musun?');
+                    if (!ok) return;
+                    el.dataset.confirmBypass = '1';
+                    setTimeout(() => {
+                        if (el.tagName === 'A' && el.getAttribute('href')) {
+                            window.location.assign(el.getAttribute('href'));
+                        } else {
+                            el.click();
+                        }
+                        delete el.dataset.confirmBypass;
+                    }, 0);
+                });
+            });
+        })();
+
+        // Auto-hide toast messages after 3 seconds
+        (function autoHideToasts() {
+            const toasts = document.querySelectorAll('[data-toast]');
+            if (!toasts.length) return;
+            setTimeout(() => {
+                toasts.forEach((el) => {
+                    el.classList.add('opacity-0', 'transition', 'duration-500');
+                    setTimeout(() => el.remove(), 500);
+                });
+            }, 3000);
+        })();
+    </script>
+</body>
+</html>

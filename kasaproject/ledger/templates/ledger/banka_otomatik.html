@@ -1,0 +1,115 @@
+{% extends "ledger/base.html" %}
+{% load money %}
+{% block title %}Banka{% endblock %}
+
+{% block content %}
+<div class="space-y-5" id="bank-auto">
+    <div>
+        <p class="text-sm text-slate-400">Banka</p>
+        <h1 class="text-2xl font-semibold">Banka</h1>
+        <p class="text-xs text-slate-400">Toplam bakiye: {{ net|money }} ₺</p>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-3">
+        <div class="glass rounded-xl p-4 border border-white/10">
+            <p class="text-sm text-slate-400">Gelir (toplam)</p>
+            <p class="text-2xl font-semibold text-emerald-300">{{ incoming|money }} ₺</p>
+        </div>
+        <div class="glass rounded-xl p-4 border border-white/10">
+            <p class="text-sm text-slate-400">Gider (toplam)</p>
+            <p class="text-2xl font-semibold text-rose-300">{{ outgoing|money }} ₺</p>
+        </div>
+        <div class="glass rounded-xl p-4 border border-white/10">
+            <p class="text-sm text-slate-400">Net</p>
+            <p class="text-2xl font-semibold {% if net >= 0 %}text-emerald-300{% else %}text-rose-300{% endif %}">{{ net|money }} ₺</p>
+        </div>
+    </div>
+
+    <div class="glass rounded-xl p-4 border border-white/10">
+        <div class="grid md:grid-cols-3 gap-3 text-sm">
+            <div>
+                <p class="text-slate-400">Banka API Net</p>
+                <p class="text-lg font-semibold {% if net >= 0 %}text-emerald-300{% else %}text-rose-300{% endif %}">{{ net|money }} ₺</p>
+            </div>
+            <div>
+                <p class="text-slate-400">Manuel Banka Net (kayıtlar)</p>
+                <p class="text-lg font-semibold {% if manual_net >= 0 %}text-emerald-300{% else %}text-rose-300{% endif %}">{{ manual_net|money }} ₺</p>
+            </div>
+            <div>
+                <p class="text-slate-400">Fark (Manuel - API)</p>
+                <p class="text-lg font-semibold {% if diff_net >= 0 %}text-emerald-300{% else %}text-rose-300{% endif %}">{{ diff_net|money }} ₺</p>
+                <p class="text-xs text-slate-400 mt-1">Banka ve manuel kayıtlar eşleşiyor mu kontrol et.</p>
+            </div>
+        </div>
+    </div>
+
+    {% if error %}
+        <div class="px-4 py-3 rounded-lg bg-rose-500/20 border border-rose-400/30 text-sm" data-toast>{{ error }}</div>
+    {% endif %}
+    {% if message %}
+        <div class="px-4 py-3 rounded-lg bg-emerald-500/20 border border-emerald-400/30 text-sm" data-toast>{{ message }}</div>
+    {% endif %}
+
+    <div class="glass rounded-xl p-5 border border-white/10 space-y-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-slate-400">Ziraat API</p>
+                <h2 class="text-xl font-semibold">Banka</h2>
+            </div>
+            <span class="text-xs px-3 py-1 rounded-full bg-white/5 border border-white/10 text-slate-300">Toplam: {{ transactions|length }} hareket</span>
+        </div>
+        <div class="overflow-auto max-h-[60vh]">
+            <table class="min-w-full text-sm">
+                <thead class="text-slate-300">
+                    <tr>
+                        <th class="text-left pb-2">Tarih</th>
+                        <th class="text-left pb-2">Açıklama</th>
+                        <th class="text-left pb-2">Yön</th>
+                        <th class="text-right pb-2">Tutar</th>
+                        <th class="text-right pb-2">Bakiye</th>
+                        <th class="text-right pb-2">İşlem</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    {% for tx in transactions %}
+                        <tr class="hover:bg-white/5 transition">
+                            <td class="py-2 text-slate-300 whitespace-nowrap">{{ tx.timestamp|date:"d.m.Y H:i" }}</td>
+                            <td class="py-2">{{ tx.description }}</td>
+                            <td class="py-2">
+                                {% if tx.direction == 'IN' %}
+                                    <span class="text-emerald-300">Gelir</span>
+                                {% else %}
+                                    <span class="text-rose-300">Gider</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-2 text-right {% if tx.direction == 'IN' %}text-emerald-300{% else %}text-rose-300{% endif %}">{{ tx.amount|money }} ₺</td>
+                            <td class="py-2 text-right text-slate-300">{{ tx.balance|default:"-"|money }} {% if tx.balance %}₺{% endif %}</td>
+                            <td class="py-2 text-right">
+                                <form method="post" class="inline-flex items-center gap-2">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="import">
+                                    <input type="hidden" name="transaction_id" value="{{ tx.id }}">
+                                    <input type="hidden" name="timestamp" value="{{ tx.timestamp|date:'c' }}">
+                                    <input type="hidden" name="description" value="{{ tx.description }}">
+                                    <input type="hidden" name="amount" value="{{ tx.amount }}">
+                                    <select name="direction" class="rounded-lg bg-slate-800 border border-slate-700 text-xs px-2 py-1 text-slate-200">
+                                        <option value="IN" {% if tx.direction == 'IN' %}selected{% endif %}>Gelir</option>
+                                        <option value="OUT" {% if tx.direction == 'OUT' %}selected{% endif %}>Gider</option>
+                                    </select>
+                                    <select name="account" class="rounded-lg bg-slate-800 border border-slate-700 text-xs px-2 py-1 text-slate-200">
+                                        <option value="BANK" selected>Banka</option>
+                                    </select>
+                                    <input type="hidden" name="cash_category_id" value="">
+                                    <button type="submit" class="px-3 py-1 rounded bg-emerald-500 text-black font-semibold hover:bg-emerald-400">İşlet</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="6" class="py-4 text-center text-slate-400">Kayıt yok</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
