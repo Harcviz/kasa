@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: kasa
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: bash build.sh
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: kasa.onrender.com
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://kasa.onrender.com
+      - key: DATABASE_URL
+        fromDatabase:
+          name: kasa-db
+          property: connectionString
+
+databases:
+  - name: kasa-db
+    plan: free
