@@ -7,6 +7,11 @@ class Counterparty(models.Model):
 
     name = models.CharField(max_length=120)
     contact = models.CharField(max_length=200, blank=True)
+    tax_id = models.CharField(max_length=30, blank=True)
+    address = models.CharField(max_length=255, blank=True)
+    iban = models.CharField(max_length=34, blank=True)
+    contact_person = models.CharField(max_length=120, blank=True)
+    website = models.CharField(max_length=200, blank=True)
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -29,6 +34,7 @@ class Transaction(models.Model):
     class Account(models.TextChoices):
         CASH = "CASH", "Nakit"
         BANK = "BANK", "Banka"
+        NONE = "NONE", "Kasa dışı"
 
     direction = models.CharField(max_length=3, choices=Direction.choices)
     account = models.CharField(max_length=5, choices=Account.choices)
