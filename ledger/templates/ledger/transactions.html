@@ -4,14 +4,19 @@
 
 {% block content %}
     <div class="glass rounded-xl p-5 border border-purple-400/30 space-y-4">
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between flex-wrap gap-3">
             <div>
                 <p class="text-sm text-slate-300">Düzenleme ve log</p>
                 <h2 class="text-2xl font-semibold">Hareketler</h2>
                 <p class="text-xs text-slate-400">Yanlış kayıtları düzenleyebilir, işlem logunu görebilirsiniz.</p>
             </div>
-            <div class="text-sm text-slate-300">
-                Son 50 hareket listelenir.
+            <div class="flex items-center gap-3 text-sm text-slate-300">
+                <span>{% if show_all %}Tüm hareketler listeleniyor{% else %}Son 5 hareket listelenir{% endif %}</span>
+                {% if show_all %}
+                    <a href="{% url 'transactions_manage' %}" class="px-3 py-2 rounded bg-white/10 border border-white/15 text-xs hover:bg-white/15">Son 5'i göster</a>
+                {% else %}
+                    <a href="{% url 'transactions_manage' %}?show=all" class="px-3 py-2 rounded bg-white/10 border border-white/15 text-xs hover:bg-white/15">Tümünü göster</a>
+                {% endif %}
             </div>
         </div>
 
@@ -100,72 +105,70 @@
         </div>
     </div>
 
-    <div class="glass rounded-xl p-5 border border-purple-400/30 space-y-4 mt-4">
-        <div class="flex items-center justify-between">
+    <div class="glass rounded-xl p-5 border border-purple-400/30 space-y-3 mt-4">
+        <div class="flex items-center justify-between flex-wrap gap-2">
             <div class="flex items-center gap-3">
                 <h3 class="text-lg font-semibold">Düzenleme Logu</h3>
-                <button id="toggle-log" class="glass px-3 py-1 rounded bg-white/10 text-xs">Göster/Gizle</button>
+                <button id="toggle-log" class="px-3 py-1 rounded bg-white/10 text-xs border border-white/15">Göster/Gizle</button>
             </div>
             <span class="text-xs text-slate-400">{{ audits|length }} kayıt</span>
         </div>
-        <div class="overflow-auto max-h-[55vh]" id="log-panel">
-            <table class="min-w-full text-[12px] leading-snug">
-                <thead class="text-slate-300 text-[11px] uppercase tracking-wide">
-                    <tr>
-                        <th class="text-left pb-2">Zaman</th>
-                        <th class="text-left pb-2">Hareket</th>
-                        <th class="text-left pb-2">Kullanıcı / IP</th>
-                        <th class="text-left pb-2">Not</th>
-                        <th class="text-left pb-2">Önce</th>
-                        <th class="text-left pb-2">Sonra</th>
-                        <th class="text-left pb-2">Geri al</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-white/5">
-                    {% for log in audits %}
-                        <tr class="align-top">
-                            <td class="py-2 text-slate-300 whitespace-nowrap">{{ log.changed_at|date:"d.m.Y H:i" }}</td>
-                            <td class="py-2">
-                                <div class="font-semibold text-slate-100">#{{ log.transaction.id }}</div>
-                                <div class="text-slate-300">{{ log.transaction.description|default:"(açıklama yok)" }}</div>
-                            </td>
-                            <td class="py-2 text-slate-300">
-                                {{ log.username|default:"anon" }}<br>
-                                {{ log.ip_address|default:"-" }}
-                            </td>
-                            <td class="py-2 text-slate-300">
-                                {{ log.note|default:"-" }}
-                            </td>
-                            <td class="py-2 text-slate-200 whitespace-nowrap">
-                                <div class="font-semibold text-slate-100">{{ log.old_account }} / {{ log.old_direction }}</div>
-                                <div class="text-amber-200 font-semibold">Tutar (İlk): {{ log.old_amount|money }}</div>
-                                <div class="text-slate-300">Açıklama: {{ log.old_description|default:"-" }}</div>
-                                <div class="text-slate-400">Cari: {{ log.old_counterparty|default:"-" }}</div>
-                            </td>
-                            <td class="py-2 text-slate-200 whitespace-nowrap">
-                                <div class="font-semibold text-slate-100">{{ log.new_account }} / {{ log.new_direction }}</div>
-                                <div class="text-emerald-200 font-semibold">Tutar (Son): {{ log.new_amount|money }}</div>
-                                <div class="text-slate-300">Açıklama: {{ log.new_description|default:"-" }}</div>
-                                <div class="text-slate-400">Cari: {{ log.new_counterparty|default:"-" }}</div>
-                            </td>
-                            <td class="py-2">
-                                {% if log.new_description and log.new_description|slice:":7" == "Silindi" %}
-                                    <form method="post">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="action" value="restore_audit">
-                                        <input type="hidden" name="audit_id" value="{{ log.id }}">
-                                        <button type="submit" class="px-3 py-1 rounded bg-emerald-500 text-black text-xs font-semibold hover:bg-emerald-400">Geri Çağır</button>
-                                    </form>
-                                {% else %}
-                                    <span class="text-xs text-slate-500">-</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% empty %}
-                        <tr><td colspan="7" class="py-4 text-center text-slate-400">Log yok</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="overflow-auto max-h-[55vh] rounded-lg border border-white/10 bg-slate-900/30" id="log-panel">
+            <div class="grid grid-cols-[110px,140px,140px,120px,1fr,1fr,90px] text-[12px] text-slate-300 font-medium px-3 py-2 border-b border-white/5">
+                <span>Zaman</span>
+                <span>Hareket</span>
+                <span>Kullanıcı / IP</span>
+                <span>Not</span>
+                <span>Önce</span>
+                <span>Sonra</span>
+                <span class="text-center">Geri al</span>
+            </div>
+            <div class="divide-y divide-white/5 text-[12px] leading-snug">
+                {% for log in audits %}
+                    <div class="grid grid-cols-[110px,140px,140px,120px,1fr,1fr,90px] px-3 py-2 items-center hover:bg-white/5">
+                        <div class="text-slate-300 whitespace-nowrap">{{ log.changed_at|date:"d.m.Y H:i" }}</div>
+                        <div>
+                            <div class="font-semibold text-slate-100">{{ log.transaction.id }}</div>
+                            <div class="text-slate-400 text-[11px]">{{ log.transaction.description|default:"(açıklama yok)" }}</div>
+                        </div>
+                        <div class="text-slate-300 text-[11px]">
+                            {{ log.username|default:"anon" }}<br>
+                            {{ log.ip_address|default:"-" }}
+                        </div>
+                        <div class="text-slate-300 text-[11px]">{{ log.note|default:"-" }}</div>
+                        <div class="text-slate-200 text-[11px]">
+                            <div class="font-semibold text-slate-100">
+                                {% if log.old_account == 'CASH' %}Nakit{% elif log.old_account == 'BANK' %}Banka{% else %}{{ log.old_account }}{% endif %}
+                                /
+                                {% if log.old_direction == 'IN' %}Gelir{% elif log.old_direction == 'OUT' %}Gider{% else %}{{ log.old_direction }}{% endif %}
+                            </div>
+                            <div class="text-amber-200 font-semibold">Tutar: {{ log.old_amount|money }}</div>
+                            <div class="text-slate-400">Açıklama: {{ log.old_description|default:"-" }}</div>
+                            <div class="text-slate-500">Cari: {{ log.old_counterparty|default:"-" }}</div>
+                        </div>
+                        <div class="text-slate-200 text-[11px]">
+                            <div class="font-semibold text-slate-100">
+                                {% if log.new_account == 'CASH' %}Nakit{% elif log.new_account == 'BANK' %}Banka{% else %}{{ log.new_account }}{% endif %}
+                                /
+                                {% if log.new_direction == 'IN' %}Gelir{% elif log.new_direction == 'OUT' %}Gider{% else %}{{ log.new_direction }}{% endif %}
+                            </div>
+                            <div class="text-emerald-200 font-semibold">Tutar: {{ log.new_amount|money }}</div>
+                            <div class="text-slate-400">Açıklama: {{ log.new_description|default:"-" }}</div>
+                            <div class="text-slate-500">Cari: {{ log.new_counterparty|default:"-" }}</div>
+                        </div>
+                        <div class="flex justify-center">
+                            <form method="post" class="contents">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="restore_audit">
+                                <input type="hidden" name="audit_id" value="{{ log.id }}">
+                                <button type="submit" class="px-3 py-1 rounded bg-emerald-500 text-black text-xs font-semibold hover:bg-emerald-400">Geri Al</button>
+                            </form>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="px-4 py-3 text-center text-slate-400 text-sm">Log yok</div>
+                {% endfor %}
+            </div>
         </div>
     </div>
 

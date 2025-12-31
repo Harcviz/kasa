@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -57,12 +57,12 @@ def _load_shareholders_safe() -> List[Shareholder]:
     try:
         return load_shareholders()
     except Exception:
-        # Varsayılan örnekler
+        # Varsay ▒lan  Ârnekler
         return [
             Shareholder(name="Burhan Arslan", percent=Decimal("50")),
             Shareholder(name="Emre Babur", percent=Decimal("30")),
             Shareholder(name="Ali Babur", percent=Decimal("10")),
-            Shareholder(name="Selin Özcan", percent=Decimal("10")),
+            Shareholder(name="Selin  ûzcan", percent=Decimal("10")),
         ]
 
 
@@ -101,13 +101,13 @@ def dashboard(request):
                 name = request.POST.get("cash_category_name", "").strip()
                 direction = request.POST.get("cash_category_direction", "").strip() or None
                 if not name or not direction:
-                    raise ValueError("Kategori adı ve yön gerekli.")
+                    raise ValueError("Kategori ad ▒ ve y Ân gerekli.")
                 CashCategory.objects.get_or_create(name=name, direction=direction)
                 message = "Kalem eklendi."
             elif action == "add":
                 amount = Decimal(request.POST.get("amount", "0") or "0")
                 if amount <= 0:
-                    raise ValueError("Tutar sıfır olamaz.")
+                    raise ValueError("Tutar s ▒f ▒r olamaz.")
                 direction = request.POST.get("direction") or request.POST.get("cash_category_direction") or "IN"
                 account = request.POST.get("account", Transaction.Account.CASH)
                 description = request.POST.get("description", "").strip()
@@ -121,7 +121,7 @@ def dashboard(request):
                     counterparty=cp,
                     timestamp=_now(),
                 )
-                message = "Kayıt eklendi."
+                message = "Kay ▒t eklendi."
         except Exception as exc:  # noqa: BLE001
             error = str(exc)
 
@@ -132,7 +132,7 @@ def dashboard(request):
     bank_qs = transactions.filter(account=Transaction.Account.BANK)
 
     account_cards = []
-    # Sadece Nakit ve Banka tekli kartları göster
+    # Sadece Nakit ve Banka tekli kartlar ▒ g Âster
     for code, label in ((Transaction.Account.CASH, dict(Transaction.Account.choices).get(Transaction.Account.CASH)),
                         (Transaction.Account.BANK, dict(Transaction.Account.choices).get(Transaction.Account.BANK))):
         qs = transactions.filter(account=code)
@@ -146,7 +146,7 @@ def dashboard(request):
             }
         )
 
-    # Banka otomatik (bekleyen onaylı olmayan kayıtlar)
+    # Banka otomatik (bekleyen onayl ▒ olmayan kay ▒tlar)
     bank_auto_pending = Transaction.objects.filter(account=Transaction.Account.BANK, approved=False)
     bank_auto_totals = _account_totals(bank_auto_pending)
 
@@ -161,21 +161,10 @@ def dashboard(request):
         "message": message,
         "error": error,
         "display_accounts": Transaction.Account,
-        "account_cards": account_cards + [
-            {
-                "code": "BANK_AUTO",
-                "label": "Banka",
-                "overall": bank_auto_totals,
-                "today": _account_totals(bank_auto_pending.filter(timestamp__date=today)),
-            }
-        ],
+        "account_cards": account_cards,
         "cash_categories": CashCategory.objects.all(),
         "prev_closing": prev_closing,
-        "prev_bank_auto": bank_auto_totals["net"],
-        "prev_total_with_auto": prev_closing["CASH"]["net"] + prev_closing["BANK"]["net"] + bank_auto_totals["net"],
-        "overall_with_auto": _account_totals(cash_qs)["net"]
-        + _account_totals(bank_qs)["net"]
-        + bank_auto_totals["net"],
+        "overall_with_auto": _account_totals(cash_qs)["net"] + _account_totals(bank_qs)["net"],
     }
     return render(request, "ledger/dashboard.html", context)
 
@@ -195,7 +184,7 @@ def account_detail(request, account: str):
         try:
             amount = Decimal(request.POST.get("amount", "0") or "0")
             if amount <= 0:
-                raise ValueError("Tutar sıfır olamaz.")
+                raise ValueError("Tutar s ▒f ▒r olamaz.")
             direction = request.POST.get("direction", Transaction.Direction.IN)
             description = request.POST.get("description", "").strip()
             cp_id = request.POST.get("counterparty") or None
@@ -208,7 +197,7 @@ def account_detail(request, account: str):
                 counterparty=cp,
                 timestamp=_now(),
             )
-            message = "Kayıt eklendi."
+            message = "Kay ▒t eklendi."
         except Exception as exc:  # noqa: BLE001
             error = str(exc)
 
@@ -252,7 +241,7 @@ def account_detail(request, account: str):
     weekly_closing = prev_carry + weekly["net"]
     monthly_closing = prev_carry + monthly["net"]
 
-    # Aylık kapanışlar listesi
+    # Ayl ▒k kapan ▒ şlar listesi
     month_closures = []
     for row in (
         qs.annotate(month_label=TruncMonth("timestamp"))
@@ -291,7 +280,7 @@ def account_detail(request, account: str):
 
 
 # -------------------------------
-# Bank auto (API import ekranı)
+# Bank auto (API import ekran ▒)
 # -------------------------------
 
 
@@ -305,11 +294,11 @@ def bank_auto(request):
                 tx_id = request.POST.get("transaction_id")
                 tx = get_object_or_404(Transaction, id=tx_id, approved=False)
                 raw_amount = str(request.POST.get("amount", "0") or "0").strip()
-                # Türkçe format desteği: "70.000,00" -> "70000.00"
+                # T  rk ğe format deste şi: "70.000,00" -> "70000.00"
                 normalized_amount = raw_amount.replace(".", "").replace(",", ".")
                 amount = Decimal(normalized_amount)
                 if amount == 0:
-                    raise ValueError("Tutar geçersiz.")
+                    raise ValueError("Tutar ge ğersiz.")
                 direction = request.POST.get("direction", Transaction.Direction.IN)
                 account = request.POST.get("account", Transaction.Account.BANK)
                 description = request.POST.get("description", "").strip()
@@ -330,8 +319,8 @@ def bank_auto(request):
                 tx.counterparty = tx.counterparty  # no change
                 tx.approved = True
                 tx.save(update_fields=["direction", "account", "amount", "description", "timestamp", "approved"])
-                # Kategori bilgisi sadece log amaçlı; Transaction modeli CashCategory tutmuyor.
-                message = "İşlem içe aktarıldı ve manuele işlendi."
+                # Kategori bilgisi sadece log ama ğl ▒; Transaction modeli CashCategory tutmuyor.
+                message = " ░ şlem i ğe aktar ▒ld ▒ ve manuele i şlendi."
             except Exception as exc:  # noqa: BLE001
                 error = str(exc)
 
@@ -355,7 +344,7 @@ def bank_auto(request):
 
 
 # -------------------------------
-# Backdate (geçmiş işlem ekle)
+# Backdate (ge ğmi ş i şlem ekle)
 # -------------------------------
 
 
@@ -387,7 +376,7 @@ def backdate(request):
                     counterparty=cp,
                     timestamp=timezone.make_aware(ts) if timezone.is_naive(ts) else ts,
                 )
-                message = "Kayıt eklendi."
+                message = "Kay ▒t eklendi."
             except Exception as exc:  # noqa: BLE001
                 error = str(exc)
 
@@ -436,7 +425,7 @@ def transactions_manage(request):
             tx_id = request.POST.get("transaction_id")
             tx = Transaction.objects.filter(id=tx_id).first() if tx_id else None
             if not tx:
-                error = "Hareket bulunamadı."
+                error = "Hareket bulunamad ▒."
             elif action == "delete":
                 old = {
                     "direction": tx.direction,
@@ -447,7 +436,7 @@ def transactions_manage(request):
                 }
                 _log_transaction_audit(tx, old, {}, request.POST.get("audit_note"), request)
                 tx.delete()
-                message = "Kayıt silindi."
+                message = "Kay ▒t silindi."
             else:
                 try:
                     old = {
@@ -477,7 +466,7 @@ def transactions_manage(request):
                         "counterparty": tx.counterparty.name if tx.counterparty else "",
                     }
                     _log_transaction_audit(tx, old, new, request.POST.get("audit_note"), request)
-                    message = "Kayıt güncellendi."
+                    message = "Kay ▒t g  ncellendi."
                 except Exception as exc:  # noqa: BLE001
                     error = str(exc)
 
@@ -506,13 +495,27 @@ def counterparties(request):
             try:
                 name = request.POST.get("name", "").strip()
                 contact = request.POST.get("contact", "").strip()
+                tax_id = request.POST.get("tax_id", "").strip()
+                address = request.POST.get("address", "").strip()
+                iban = request.POST.get("iban", "").strip()
+                contact_person = request.POST.get("contact_person", "").strip()
+                website = request.POST.get("website", "").strip()
                 notes = request.POST.get("notes", "").strip()
                 if not name:
                     raise ValueError("Ad gerekli.")
-                cp, created = Counterparty.objects.get_or_create(name=name, defaults={"contact": contact, "notes": notes})
+                defaults = {
+                    "contact": contact,
+                    "notes": notes,
+                    "tax_id": tax_id,
+                    "address": address,
+                    "iban": iban,
+                    "contact_person": contact_person,
+                    "website": website,
+                }
+                cp, created = Counterparty.objects.get_or_create(name=name, defaults=defaults)
                 if not created:
-                    cp.contact = contact
-                    cp.notes = notes
+                    for field, value in defaults.items():
+                        setattr(cp, field, value)
                     cp.save()
                 CounterpartyAudit.objects.create(
                     counterparty_name=cp.name,
@@ -524,12 +527,37 @@ def counterparties(request):
                 message = "Cari kaydedildi."
             except Exception as exc:  # noqa: BLE001
                 error = str(exc)
-        elif action == "delete_cari":
+        elif action == "update_cari":
             try:
                 cp_id = request.POST.get("counterparty_id")
                 cp = Counterparty.objects.filter(id=cp_id).first()
                 if not cp:
                     raise ValueError("Cari bulunamadı.")
+                cp.name = request.POST.get("name", cp.name).strip() or cp.name
+                cp.contact = request.POST.get("contact", "").strip()
+                cp.tax_id = request.POST.get("tax_id", "").strip()
+                cp.address = request.POST.get("address", "").strip()
+                cp.iban = request.POST.get("iban", "").strip()
+                cp.contact_person = request.POST.get("contact_person", "").strip()
+                cp.website = request.POST.get("website", "").strip()
+                cp.notes = request.POST.get("notes", "").strip()
+                cp.save()
+                CounterpartyAudit.objects.create(
+                    counterparty_name=cp.name,
+                    action="updated",
+                    username=getattr(request.user, "username", "") if getattr(request, "user", None) else "",
+                    ip_address=_get_client_ip(request),
+                    note=request.POST.get("audit_note", "").strip(),
+                )
+                message = "Cari güncellendi."
+            except Exception as exc:  # noqa: BLE001
+                error = str(exc)
+        elif action == "delete_cari":
+            try:
+                cp_id = request.POST.get("counterparty_id")
+                cp = Counterparty.objects.filter(id=cp_id).first()
+                if not cp:
+                    raise ValueError("Cari bulunamad ▒.")
                 name = cp.name
                 cp.delete()
                 CounterpartyAudit.objects.create(
@@ -548,7 +576,11 @@ def counterparties(request):
                 if amount <= 0:
                     raise ValueError("Tutar sıfır olamaz.")
                 direction = request.POST.get("direction", Transaction.Direction.IN)
-                account = request.POST.get("account", Transaction.Account.CASH)
+                # Borç kaydı kasa hareketine yansımasın; ödeme yaparken kasa seçilsin.
+                if direction == Transaction.Direction.IN:
+                    account = Transaction.Account.NONE
+                else:
+                    account = request.POST.get("account", Transaction.Account.CASH)
                 description = request.POST.get("description", "").strip()
                 cp_id = request.POST.get("counterparty") or None
                 cp = Counterparty.objects.filter(id=cp_id).first() if cp_id else None
@@ -561,6 +593,8 @@ def counterparties(request):
                     timestamp=_now(),
                 )
                 message = "Cari hareket kaydedildi."
+            except Exception as exc:  # noqa: BLE001
+                error = str(exc)
             except Exception as exc:  # noqa: BLE001
                 error = str(exc)
 
@@ -577,6 +611,11 @@ def counterparties(request):
                 "id": cp.id,
                 "name": cp.name,
                 "contact": cp.contact,
+                "tax_id": getattr(cp, "tax_id", ""),
+                "address": getattr(cp, "address", ""),
+                "iban": getattr(cp, "iban", ""),
+                "contact_person": getattr(cp, "contact_person", ""),
+                "website": getattr(cp, "website", ""),
                 "notes": cp.notes,
                 "net": totals["net"],
                 "incoming": totals["incoming"],
@@ -585,7 +624,7 @@ def counterparties(request):
         )
 
     counterparties_qs = Counterparty.objects.exclude(name__in=shareholder_names)
-    # Yazdırma ve seçim için detaylı veri
+    # Yazd ▒rma ve se ğim i ğin detayl ▒ veri
     cp_print_data = []
     cp_monthly = []
     cp_tx_map = []
@@ -602,7 +641,7 @@ def counterparties(request):
                 "net": totals["net"],
             }
         )
-        # aylık özet
+        # ayl ▒k  ozet
         months = []
         for row in (
             cp_qs.annotate(month_label=TruncMonth("timestamp"))
@@ -664,7 +703,7 @@ def _shareholder_payouts(
         outgoing = _sum_amount(cp_qs, Transaction.Direction.OUT)
         incoming = _sum_amount(cp_qs, Transaction.Direction.IN)
         carry_prev = carry_state.balances.get(h.name, carry_state.balances.get(h.name.lower(), Decimal("0")))
-        net_due = entitlement - outgoing + carry_prev
+        net_due = entitlement - outgoing + carry_prev - incoming
         payouts.append(
             {
                 "name": h.name,
@@ -679,13 +718,14 @@ def _shareholder_payouts(
     return payouts, error
 
 
+
 def stocks(request):
     message = error = None
     today = _today()
     month_label = today.strftime("%B %Y")
 
     holders = _load_shareholders_safe()
-    shareholder_names = {h.name.lower() for h in holders}
+    holder_names_lower = {h.name.lower() for h in holders}
     carry_state = _load_carry_safe()
 
     if request.method == "POST":
@@ -699,40 +739,57 @@ def stocks(request):
                 if amount <= 0:
                     raise ValueError("Tutar sıfır olamaz.")
                 direction = request.POST.get("direction", Transaction.Direction.OUT)
+                account = request.POST.get("account", Transaction.Account.CASH)
+                if account not in dict(Transaction.Account.choices):
+                    account = Transaction.Account.CASH
                 description = request.POST.get("description", "").strip()
                 Transaction.objects.create(
                     direction=direction,
-                    account=Transaction.Account.CASH,
+                    account=account,
                     amount=amount,
                     description=description,
                     counterparty=cp,
                     timestamp=_now(),
-                    approved=False,  # hissedar gider/gelir kasa toplamını etkilemesin
+                    approved=True,
                 )
                 message = "Cari hareket eklendi."
             except Exception as exc:  # noqa: BLE001
                 error = str(exc)
 
-    transactions = Transaction.objects.filter(approved=True)
+    all_cps = list(Counterparty.objects.all())
+    shareholder_cps_ids = [cp.id for cp in all_cps if cp.name.lower() in holder_names_lower]
+    shareholder_cps = Counterparty.objects.filter(id__in=shareholder_cps_ids)
+    # Hissedar carilerine ait eski onaysız kayıtlar varsa dahil et
+    transactions = Transaction.objects.filter(Q(approved=True) | Q(counterparty__in=shareholder_cps))
     cash_net = _account_totals(transactions.filter(account=Transaction.Account.CASH))["net"]
     bank_net = _account_totals(transactions.filter(account=Transaction.Account.BANK))["net"]
-    bank_auto_net = _account_totals(Transaction.objects.filter(account=Transaction.Account.BANK, approved=False))["net"]
-    # Hisselere dağıtılacak toplam: Nakit + Banka Otomatik (bekleyen). Onaylı banka neti ekliyoruz.
-    total_net = cash_net + bank_net + bank_auto_net
+    shareholder_borc_total = (
+        transactions.filter(counterparty__in=shareholder_cps, direction=Transaction.Direction.OUT)
+        .aggregate(total=Sum("amount"))
+        .get("total")
+        or Decimal("0")
+    )
+    shareholder_odenen_total = (
+        transactions.filter(counterparty__in=shareholder_cps, direction=Transaction.Direction.IN)
+        .aggregate(total=Sum("amount"))
+        .get("total")
+        or Decimal("0")
+    )
 
-    payouts, payout_error = _shareholder_payouts(total_net, carry_state, holders)
+    distribution_cash = cash_net
+    distribution_bank = bank_net
+    distribution_total = distribution_cash + distribution_bank + shareholder_borc_total
+
+    payouts, payout_error = _shareholder_payouts(distribution_total, carry_state, holders)
     if payout_error:
         error = payout_error
 
-    # Hissedar carileri
     shareholder_counterparties = []
-    cp_by_name = {cp.name.lower(): cp for cp in Counterparty.objects.all() if cp.name.lower() in shareholder_names}
+    cp_by_name = {cp.name.lower(): cp for cp in all_cps if cp.name.lower() in holder_names_lower}
     for holder in holders:
-        key = holder.name.lower()
-        cp = cp_by_name.get(key)
+        cp = cp_by_name.get(holder.name.lower())
         if cp:
-            cp_qs_all = Transaction.objects.filter(counterparty=cp)
-            totals = _account_totals(cp_qs_all)
+            totals = _account_totals(Transaction.objects.filter(counterparty=cp))
             shareholder_counterparties.append(
                 {
                     "id": cp.id,
@@ -755,62 +812,25 @@ def stocks(request):
                 }
             )
 
-    # Geçmiş ledger.json dökümü
     history = []
-    try:
-        import json
-
-        from io_store import LEDGER_FILE
-
-        if LEDGER_FILE.exists():
-            data = json.loads(LEDGER_FILE.read_text(encoding="utf-8"))
-            carry_balances: Dict[str, Decimal] = dict(carry_state.balances)
-            for month_key in sorted(data.keys()):
-                entry = load_ledger_entry(month_key)
-                if not entry:
-                    continue
-                result = compute_distribution(
-                    month=month_key,
-                    holders=_load_shareholders_safe(),
-                    total_cash=entry.total_cash,
-                    keep_cash=entry.keep_cash,
-                    advances=entry.advances,
-                    carry=carry_balances,
-                )
-                rows = []
-                for r in result.rows:
-                    rows.append(
-                        {
-                            "name": r.name,
-                            "share": r.percent,
-                            "share_value": r.entitlement,
-                            "paid": r.paid,
-                            "due": r.new_carry,
-                        }
-                    )
-                    carry_balances[r.name] = r.new_carry
-                history.append({"label": month_key, "rows": rows})
-    except Exception:
-        pass
-
     context = {
         "month": month_label,
         "payouts": payouts,
         "message": message,
         "error": error,
-        "display_total_net": total_net,
+        "display_total_net": cash_net + bank_net,
         "display_cash_net": cash_net,
         "display_bank_net": bank_net,
-        "display_bank_auto_net": bank_auto_net,
-        "bank_auto_error": None,
+        "distribution_total": distribution_total,
+        "distribution_cash": distribution_cash,
+        "distribution_bank": distribution_bank,
+        "shareholder_out_total": shareholder_borc_total,
+        "shareholder_in_total": shareholder_odenen_total,
         "shareholder_counterparties": shareholder_counterparties,
         "history": history,
     }
     return render(request, "ledger/stocks.html", context)
 
-
-# -------------------------------
-# Gelir/Gider özet
 # -------------------------------
 
 
@@ -832,7 +852,7 @@ def summary(request):
     expense_total = _sum_amount(qs, Transaction.Direction.OUT)
     net_total = income_total - expense_total
 
-    # Kategori bazında (açıklamaya göre gruplama)
+    # Kategori baz ▒nda (a ğ ▒klamaya g Âre gruplama)
     income_rows = []
     for row in (
         qs.filter(direction=Transaction.Direction.IN)
@@ -841,7 +861,7 @@ def summary(request):
         .order_by("-amount")
     ):
         income_rows.append(
-            {"name": row["description"] or "Diğer", "amount": row["amount"], "percent": float(row["amount"] / income_total * 100) if income_total else 0}
+            {"name": row["description"] or "Di şer", "amount": row["amount"], "percent": float(row["amount"] / income_total * 100) if income_total else 0}
         )
 
     expense_rows = []
@@ -854,7 +874,7 @@ def summary(request):
         amt = row["amount"]
         expense_rows.append(
             {
-                "name": row["description"] or "Diğer",
+                "name": row["description"] or "Di şer",
                 "amount": amt,
                 "display_amount": amt.copy_abs() if hasattr(amt, "copy_abs") else abs(amt),
                 "percent": float(amt / expense_total * 100) if expense_total else 0,
@@ -875,7 +895,7 @@ def summary(request):
 
 
 # -------------------------------
-# Hisse önizleme
+# Hisse  Ânizleme
 # -------------------------------
 
 
@@ -907,10 +927,13 @@ def stock_preview(request):
 
 
 # -------------------------------
-# Carryover (basit yönlendirme)
+# Carryover (basit y Ânlendirme)
 # -------------------------------
 
 
 def carryover(request):
-    # Özelleştirilmiş carry devri yok; ana sayfaya yönlendir.
+    #  ûzelle ştirilmi ş carry devri yok; ana sayfaya y Ânlendir.
     return redirect("dashboard")
+
+
+

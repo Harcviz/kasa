@@ -39,17 +39,17 @@
                 <p class="text-sm text-rose-300">Gider: {{ today_out|money }} ₺</p>
                 <p class="text-sm font-semibold {% if today_net >= 0 %}text-emerald-300{% else %}text-rose-300{% endif %}">Net: {{ today_net|money }} ₺</p>
             </div>
-            <div class="glass rounded-lg p-3 border border-emerald-400/30">
-                <p class="text-slate-300 text-sm">Gün sonu (devir + bugün)</p>
-                <p class="text-lg font-semibold {% if today_balance >= 0 %}text-emerald-200{% else %}text-rose-300{% endif %}">{{ today_balance|money }} ₺</p>
-            </div>
+        <div class="glass rounded-lg p-3 border border-emerald-400/30">
+            <p class="text-slate-300 text-sm">Gün sonu (devir + bugün)</p>
+            <p class="text-lg font-semibold {% if today_balance >= 0 %}text-emerald-200{% else %}text-rose-300{% endif %}">{{ today_balance|money }} ₺</p>
         </div>
+    </div>
 
-        <div class="glass rounded-lg p-4 border border-white/10">
-            <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
-                <h3 class="text-lg font-semibold">Hızlı raporlar</h3>
-                <div class="flex gap-2 items-center flex-wrap">
-                    <form method="get" class="flex items-center gap-2 text-xs">
+    <div class="glass rounded-lg p-4 border border-white/10">
+        <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+            <h3 class="text-lg font-semibold">Hızlı raporlar</h3>
+            <div class="flex gap-2 items-center flex-wrap">
+                <form method="get" class="flex items-center gap-2 text-xs">
                         <label class="text-slate-300">Günlük tarih:</label>
                         <input type="date" name="day" value="{{ selected_day|date:'Y-m-d' }}" class="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs" onchange="this.form.submit()">
                     </form>
@@ -119,7 +119,7 @@
     </div>
 
     <div id="print-haftalik" class="hidden">
-        <h3>{{ account.label }} (Nakit Kasa) - Haftalık Liste</h3>
+        <h3>{{ account.label }} - Haftalık Liste</h3>
         <table class="min-w-full text-sm" style="width:100%;border-collapse:collapse;">
             <thead>
                 <tr>
@@ -144,11 +144,11 @@
                 {% endfor %}
             </tbody>
         </table>
-        <p style="margin-top:10px;font-weight:600;">Haftalık kapanış (Nakit): {{ weekly_closing|money }} ₺</p>
+        <p style="margin-top:10px;font-weight:600;">Haftalık kapanış ({{ account.label }}): {{ weekly_closing|money }} ₺</p>
     </div>
 
     <div id="print-aylik" class="hidden">
-        <h3>{{ account.label }} (Nakit Kasa) - Aylık Liste</h3>
+        <h3>{{ account.label }} - Aylık Liste</h3>
         <table class="min-w-full text-sm" style="width:100%;border-collapse:collapse;">
             <thead>
                 <tr>
@@ -173,11 +173,11 @@
                 {% endfor %}
             </tbody>
         </table>
-        <p style="margin-top:10px;font-weight:600;">Aylık kapanış (Nakit): {{ monthly_closing|money }} ₺</p>
+        <p style="margin-top:10px;font-weight:600;">Aylık kapanış ({{ account.label }}): {{ monthly_closing|money }} ₺</p>
     </div>
 
     <div id="print-yillik" class="hidden">
-        <h3>{{ account.label }} (Nakit Kasa) - Yıllık Ay Kapanışları</h3>
+        <h3>{{ account.label }} - Yıllık Ay Kapanışları</h3>
         <table class="min-w-full text-sm" style="width:100%;border-collapse:collapse;">
             <thead>
                 <tr>
@@ -215,7 +215,7 @@
               <div class="glass w-full max-w-6xl max-h-[90vh] overflow-auto rounded-xl border border-white/15 shadow-2xl p-6 space-y-4">
                 <div class="flex items-center justify-between">
                   <div>
-                    <h2 class="text-xl font-semibold">${label} Rapor | {{ account.label }} (Nakit Kasa)</h2>
+                    <h2 class="text-xl font-semibold">${label} Rapor | {{ account.label }}</h2>
                     <p class="text-xs text-slate-400">Yazdır'a basınca tarayıcı diyalogu açılır.</p>
                   </div>
                   <div class="flex gap-2">

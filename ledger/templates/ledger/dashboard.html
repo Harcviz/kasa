@@ -15,7 +15,7 @@
                 {% csrf_token %}
                 <input type="hidden" name="action" value="add" id="form-action">
                 <input type="hidden" name="direction" id="direction-hidden" value="IN">
-                <input type="hidden" name="account" value="CASH">
+                <input type="hidden" name="account" id="account-hidden" value="CASH">
 
                 <div class="grid md:grid-cols-3 gap-5">
                     <label class="md:col-span-1 block text-sm space-y-1 relative z-0">
@@ -31,42 +31,53 @@
                     </label>
                 </div>
 
-                <div class="grid md:grid-cols-1 gap-5">
-                    <div class="glass border border-emerald-500/20 rounded-lg p-4 space-y-3">
-                        <p class="text-sm mb-2">Kalem (Gelir/Gider)</p>
+                <div class="glass border border-white/10 rounded-lg p-4 space-y-4">
+                    <div class="grid md:grid-cols-3 gap-3">
                         <div class="space-y-2">
-                            <div class="relative z-40">
-                                <div class="flex gap-2">
-                                    <input autocomplete="off" name="cash_category_name" id="cash-category-input" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm" placeholder="Kalem yaz veya seç (ör: Tahsilat, Kira)">
-                                    <button type="button" id="cash-category-toggle" class="px-3 py-2 text-xs rounded-lg bg-white/10 border border-emerald-400/40 hover:bg-emerald-500/20 transition">Liste</button>
-                                </div>
-                                <div id="cash-category-dropdown" class="hidden absolute z-50 mt-1 w-full max-h-64 overflow-auto bg-slate-900 text-white border border-white/15 rounded-lg shadow-lg" style="position:absolute;">
-                                    {% for cat in cash_categories %}
-                                        <button type="button" class="cat-option flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-white/10" data-name="{{ cat.name }}" data-id="{{ cat.id }}" data-direction="{{ cat.direction }}">
-                                            <span class="text-white">{{ cat.name }}</span>
-                                            <span class="text-xs {% if cat.direction == 'IN' %}text-emerald-300{% else %}text-rose-300{% endif %}">
-                                                ({{ cat.get_direction_display }})
-                                            </span>
-                                        </button>
-                                    {% endfor %}
-                                    <div class="px-3 py-2 text-xs text-slate-400" id="cat-empty" style="display:none;">Yeni kalem eklemek için yazıp “Kalem Ekle”ye basabilirsin.</div>
-                                </div>
-                            </div>
-                            <div class="flex flex-wrap gap-2">
-                                <button type="button" data-cat-dir="IN" class="cat-dir-pill px-3 py-2 text-xs rounded-lg bg-white/5 border border-emerald-400/30 hover:bg-emerald-500/15 transition">Gelir</button>
-                                <button type="button" data-cat-dir="OUT" class="cat-dir-pill px-3 py-2 text-xs rounded-lg bg-white/5 border border-rose-400/30 hover:bg-rose-500/15 transition">Gider</button>
-                                <button type="button" id="add-cash-category" class="px-3 py-2 text-xs rounded-lg bg-white/10 border border-emerald-400/40 hover:bg-emerald-500/20 transition">Kalem Ekle</button>
+                            <p class="text-xs text-slate-400">Yön</p>
+                            <div class="flex gap-3">
+                                <button type="button" data-cat-dir="IN" class="cat-dir-pill w-24 py-3 text-sm rounded-xl bg-white/5 border border-white/20 hover:bg-emerald-500/15 transition text-center">Gelir</button>
+                                <button type="button" data-cat-dir="OUT" class="cat-dir-pill w-24 py-3 text-sm rounded-xl bg-white/5 border border-white/20 hover:bg-emerald-500/15 transition text-center">Gider</button>
                             </div>
                         </div>
+                        <div class="space-y-2">
+                            <p class="text-xs text-slate-400">Hesap</p>
+                            <div class="flex gap-3">
+                                <button type="button" class="account-pill w-24 py-3 text-sm rounded-xl bg-white/5 border border-white/20 hover:bg-emerald-500/15 transition text-center" data-account="CASH">Nakit</button>
+                                <button type="button" class="account-pill w-24 py-3 text-sm rounded-xl bg-white/5 border border-white/20 hover:bg-emerald-500/15 transition text-center" data-account="BANK">Banka</button>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <p class="text-xs text-slate-400">Hızlı butonlar</p>
+                            <div class="flex gap-3">
+                                <button type="button" id="add-cash-category" class="w-24 py-3 text-sm rounded-xl bg-white/5 border border-white/20 hover:bg-emerald-500/15 transition text-center">Kalem Ekle</button>
+                                <button type="button" id="cash-category-toggle" class="w-24 py-3 text-sm rounded-xl bg-white/5 border border-white/20 hover:bg-emerald-500/15 transition text-center">Liste</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <label class="text-sm text-slate-300 block mb-1">Kalem (Gelir/Gider)</label>
+                        <input autocomplete="off" name="cash_category_name" id="cash-category-input" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm" placeholder="Kalem yaz veya seç (ör: Tahsilat, Kira)">
+                        <div id="cash-category-dropdown" class="hidden absolute z-50 mt-1 w-full max-h-64 overflow-auto bg-slate-900 text-white border border-white/15 rounded-lg shadow-lg" style="position:absolute;">
+                            {% for cat in cash_categories %}
+                                <button type="button" class="cat-option flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-white/10" data-name="{{ cat.name }}" data-id="{{ cat.id }}" data-direction="{{ cat.direction }}">
+                                    <span class="text-white">{{ cat.name }}</span>
+                                    <span class="text-xs {% if cat.direction == 'IN' %}text-emerald-300{% else %}text-rose-300{% endif %}">
+                                        ({{ cat.get_direction_display }})
+                                    </span>
+                                </button>
+                            {% endfor %}
+                            <div class="px-3 py-2 text-xs text-slate-400" id="cat-empty" style="display:none;">Yeni kalem eklemek için yazıp “Kalem Ekle”ye basabilirsin.</div>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-2">Kalem seçersen yön otomatik set edilir, açıklama boşsa kalem adı yazılır. Liste veya yeni kalem ile hızlı doldur.</p>
                         <input type="hidden" name="cash_category_id" id="cash-category-id">
                         <input type="hidden" name="cash_category_direction" id="cash-category-direction">
-                        <div class="text-[11px] text-slate-500">Kalem seçersen yön otomatik set edilir, açıklama boşsa kalem adı yazılır. Listede yoksa yazıp “Kalem Ekle” ile kaydedebilirsin.</div>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-4">
+                <div class="flex items-center justify-end">
                     <button type="submit" class="px-7 py-2.5 rounded-lg bg-emerald-500 text-black font-semibold hover:bg-emerald-400 transition">Kaydet</button>
-                    <p class="text-xs text-slate-400">Tarih/Saat: {{ now|date:"d.m.Y H:i" }}</p>
                 </div>
             </form>
 
@@ -82,7 +93,7 @@
             <div class="glass rounded-xl p-6 border border-emerald-400/20 shadow-lg space-y-5">
                 <div>
                     <p class="text-sm text-slate-300">Genel Bakiye</p>
-                    <h3 class="text-3xl font-semibold text-emerald-300">{{ overall_with_auto|money }} ₺</h3>
+                    <h3 class="text-3xl font-semibold text-emerald-300">{{ overall_total|money }} ₺</h3>
                     <p class="text-xs text-slate-400">Tüm hesapların toplamı</p>
                 </div>
                 <div class="space-y-4">
@@ -97,11 +108,7 @@
                                         <p class="text-[11px] text-slate-500">Dünkü devir: {{ prev_closing.CASH.net|money }} ₺</p>
                                     {% endif %}
                                 </div>
-                                {% if card.code == 'BANK_AUTO' %}
-                                    <a href="{% url 'bank_auto' %}" class="text-xs px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20">Detay</a>
-                                {% else %}
-                                    <a href="{% url 'account_detail' card.code %}" class="text-xs px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20">Detay</a>
-                                {% endif %}
+                                <a href="{% url 'account_detail' card.code %}" class="text-xs px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20">Detay</a>
                             </div>
                         </div>
                     {% endfor %}
@@ -111,7 +118,7 @@
             <div class="glass rounded-xl p-6 border border-emerald-400/20 shadow-lg space-y-4">
                 <div>
                     <p class="text-sm text-slate-300">Devir Özeti</p>
-                    <p class="text-xs text-slate-400">Bir önceki kapanış + otomatik kasa</p>
+                    <p class="text-xs text-slate-400">Bir önceki kapanış (Nakit + Banka)</p>
                 </div>
                 <div class="space-y-2 text-sm text-slate-300">
                     <div class="flex justify-between">
@@ -120,15 +127,15 @@
                     </div>
                     <div class="flex justify-between">
                         <span>Banka</span>
-                        <span class="{% if prev_bank_auto >= 0 %}text-emerald-300{% else %}text-rose-300{% endif %}">{{ prev_bank_auto|money }} ₺</span>
+                        <span class="{% if prev_closing.BANK.net >= 0 %}text-emerald-300{% else %}text-rose-300{% endif %}">{{ prev_closing.BANK.net|money }} ₺</span>
                     </div>
                     <div class="flex justify-between">
                         <span>Toplam</span>
-                        <span class="{% if prev_total_with_auto >= 0 %}text-emerald-300{% else %}text-rose-300{% endif %}">{{ prev_total_with_auto|money }} ₺</span>
+                        <span class="{% if prev_total >= 0 %}text-emerald-300{% else %}text-rose-300{% endif %}">{{ prev_total|money }} ₺</span>
                     </div>
                     <div class="flex justify-between text-xs text-slate-400 pt-1 border-t border-white/5">
                         <span>Devir</span>
-                        <span class="text-emerald-300">{{ prev_total_with_auto|money }} ₺</span>
+                        <span class="text-emerald-300">{{ prev_total|money }} ₺</span>
                     </div>
                 </div>
             </div>
@@ -145,10 +152,6 @@
                 const dirInput = document.querySelector(`input[name="direction"][value="${direction}"]`);
                 if (dirInput) {
                     dirInput.checked = true;
-                }
-                const accountCash = document.querySelector('input[name="account"][value="CASH"]');
-                if (accountCash) {
-                    accountCash.checked = true;
                 }
                 const descInput = document.querySelector('input[name="description"]');
                 if (descInput) {
@@ -181,8 +184,6 @@
                 const dirInput = document.querySelector(`input[name="direction"][value="${dir}"]`);
                 if (dirInput) dirInput.checked = true;
                 if (typeof setDir === 'function') setDir(dir);
-                const accountCash = document.querySelector('input[name="account"][value="CASH"]');
-                if (accountCash) accountCash.checked = true;
             }
             const descInput = document.querySelector('input[name="description"]');
             if (descInput && name) {
@@ -258,6 +259,19 @@
         const dirPills = document.querySelectorAll('.cat-dir-pill');
         const dirInputs = document.querySelectorAll('input[name="direction"]');
         const dirHidden = document.getElementById('direction-hidden');
+        const accountHidden = document.getElementById('account-hidden');
+        const accountPills = document.querySelectorAll('.account-pill');
+
+        function setAccount(code) {
+            accountPills.forEach((pill) => {
+                const active = pill.dataset.account === code;
+                pill.classList.toggle('ring-1', active);
+                pill.classList.toggle('ring-emerald-300', active);
+                pill.classList.toggle('bg-emerald-500/20', active);
+            });
+            if (accountHidden) accountHidden.value = code || 'CASH';
+        }
+
         function setDir(dir) {
             dirPills.forEach(pill => {
                 const active = pill.getAttribute('data-cat-dir') === dir;
@@ -283,6 +297,10 @@
         });
         const checkedRadio = document.querySelector('input[name="direction"]:checked');
         if (checkedRadio) setDir(checkedRadio.value);
+        accountPills.forEach((pill) => {
+            pill.addEventListener('click', () => setAccount(pill.dataset.account || 'CASH'));
+        });
+        setAccount(accountHidden ? accountHidden.value || 'CASH' : 'CASH');
 
         // Kalem ekle butonu: mevcut kalemi ve yönü kaydeder.
         const addCatBtn = document.getElementById('add-cash-category');
