@@ -80,9 +80,9 @@
                     <h1 class="text-5xl font-semibold leading-tight">KASA</h1>
                 </div>
                 <p id="clock" class="ml-auto text-right text-xs text-emerald-300 leading-5 w-full md:w-auto"></p>
-                <nav class="glass px-4 py-3 rounded-xl border border-white/10 text-sm flex flex-wrap gap-3 w-full">
+                <nav class="glass px-4 py-3 rounded-xl border border-white/10 text-sm flex flex-wrap gap-3 w-full relative z-50">
                     <a href="{% url 'dashboard' %}" class="flex flex-1 min-w-[150px] items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-emerald-500/15 transition text-center">
-                        <span class="material-symbols-outlined text-base">home</span> Ana Panel
+                        <span class="material-symbols-outlined text-base">home</span> Durum
                     </a>
                     <a href="{% url 'account_detail' 'CASH' %}" class="flex flex-1 min-w-[150px] items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-emerald-500/15 transition text-center">
                         <span class="material-symbols-outlined text-base">account_balance_wallet</span> Nakit Kasa
@@ -90,21 +90,28 @@
                     <a href="{% url 'account_detail' 'BANK' %}" class="flex flex-1 min-w-[150px] items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-emerald-500/15 transition text-center">
                         <span class="material-symbols-outlined text-base">account_balance</span> Banka
                     </a>
-                    <a href="{% url 'transactions_manage' %}" class="flex flex-1 min-w-[150px] items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-emerald-500/15 transition text-center">
-                        <span class="material-symbols-outlined text-base">list</span> Hareketler
-                    </a>
                     <a href="{% url 'counterparties' %}" class="flex flex-1 min-w-[150px] items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-emerald-500/15 transition text-center">
                         <span class="material-symbols-outlined text-base">people</span> Cariler
                     </a>
                     <a href="{% url 'stocks' %}" class="flex flex-1 min-w-[150px] items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-emerald-500/15 transition text-center">
                         <span class="material-symbols-outlined text-base">pie_chart</span> Hisseler
                     </a>
-                    <a href="{% url 'stock_preview' %}" class="flex flex-1 min-w-[150px] items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-emerald-500/15 transition text-center">
-                        <span class="material-symbols-outlined text-base">calculate</span> Hisse Hesapla
-                    </a>
-                    <a href="{% url 'summary' %}" class="flex flex-1 min-w-[150px] items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-emerald-500/15 transition text-center">
-                        <span class="material-symbols-outlined text-base">insights</span> Özet
-                    </a>
+                    <div class="relative flex flex-1 min-w-[150px]">
+                        <button id="tools-toggle" type="button" class="flex w-full items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-emerald-500/15 transition text-center">
+                            <span class="material-symbols-outlined text-base">build</span> Araçlar
+                        </button>
+                        <div id="tools-menu" class="hidden absolute right-0 top-full mt-2 w-56 rounded-lg border border-white/10 bg-slate-900/95 shadow-2xl backdrop-blur text-left z-[999]">
+                            <a href="{% url 'transactions_manage' %}" class="flex items-center gap-2 px-3 py-2 hover:bg-white/10 text-sm">
+                                <span class="material-symbols-outlined text-base">list</span> Hareketler
+                            </a>
+                            <a href="{% url 'stock_preview' %}" class="flex items-center gap-2 px-3 py-2 hover:bg-white/10 text-sm">
+                                <span class="material-symbols-outlined text-base">calculate</span> Hisse Hesapla
+                            </a>
+                            <a href="{% url 'summary' %}" class="flex items-center gap-2 px-3 py-2 hover:bg-white/10 text-sm">
+                                <span class="material-symbols-outlined text-base">insights</span> Özet
+                            </a>
+                        </div>
+                    </div>
                 </nav>
             </div>
 
@@ -214,6 +221,26 @@
                     }, 0);
                 });
             });
+        })();
+
+        
+        // Ara?lar men?s?
+        (function attachToolsMenu() {
+            const toggle = document.getElementById('tools-toggle');
+            const menu = document.getElementById('tools-menu');
+            if (!toggle || !menu) return;
+            const hide = () => menu.classList.add('hidden');
+            toggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                menu.classList.toggle('hidden');
+            });
+            document.addEventListener('click', (e) => {
+                if (!menu.contains(e.target) && !toggle.contains(e.target)) hide();
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') hide();
+            });
+            window.addEventListener('resize', hide);
         })();
 
         // Auto-hide toast messages after 3 seconds

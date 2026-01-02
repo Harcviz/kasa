@@ -600,9 +600,29 @@ def counterparties(request):
 
     transactions = Transaction.objects.filter(approved=True)
     summaries = []
-    shareholder_names = {h.name.lower() for h in _load_shareholders_safe()}
-    for cp in Counterparty.objects.all():
-        if cp.name.lower() in shareholder_names:
+    cp_filter = request.GET.get("cp")
+    filtered_cp = None
+    if cp_filter:
+        try:
+            filtered_cp = int(cp_filter)
+        except Exception:
+            filtered_cp = None
+
+    base_holders = _load_shareholders_safe()
+    excluded_shareholders = {
+        "burhan arslan",
+        "emre babur",
+        "selin ozcan",
+        "selin ?zcan",
+        "ali babur",
+    } | {h.name.strip().lower() for h in base_holders}
+
+    cp_queryset = Counterparty.objects.all()
+    if filtered_cp:
+        cp_queryset = cp_queryset.filter(id=filtered_cp)
+
+    for cp in cp_queryset:
+        if cp.name.strip().lower() in excluded_shareholders:
             continue  # Hissedar carilerini burada listeleme
         cp_qs = transactions.filter(counterparty=cp)
         totals = _account_totals(cp_qs)
@@ -623,8 +643,8 @@ def counterparties(request):
             }
         )
 
-    counterparties_qs = Counterparty.objects.exclude(name__in=shareholder_names)
-    # Yazd ▒rma ve se ğim i ğin detayl ▒ veri
+    counterparties_qs = [cp for cp in cp_queryset if cp.name.strip().lower() not in excluded_shareholders]
+    # Yazd?rma ve se?im i?in detayl? veri
     cp_print_data = []
     cp_monthly = []
     cp_tx_map = []
@@ -641,7 +661,7 @@ def counterparties(request):
                 "net": totals["net"],
             }
         )
-        # ayl ▒k  ozet
+        # ayl?k ozet
         months = []
         for row in (
             cp_qs.annotate(month_label=TruncMonth("timestamp"))
@@ -664,7 +684,6 @@ def counterparties(request):
                 "transactions": list(cp_qs.order_by("-timestamp")[:100]),
             }
         )
-
     context = {
         "message": message,
         "error": error,
@@ -675,6 +694,7 @@ def counterparties(request):
         "cp_print_data": cp_print_data,
         "cp_monthly": cp_monthly,
         "cp_tx_map": cp_tx_map,
+        "cp_filter": filtered_cp,
     }
     return render(request, "ledger/counterparties.html", context)
 
@@ -721,116 +741,87 @@ def _shareholder_payouts(
 
 def stocks(request):
     message = error = None
-    today = _today()
-    month_label = today.strftime("%B %Y")
+    holders = [
+        Shareholder(name="Burhan Arslan", percent=Decimal("50")),
+        Shareholder(name="Emre Babur", percent=Decimal("30")),
+        Shareholder(name="Selin Ozcan", percent=Decimal("10")),
+        Shareholder(name="Ali Babur", percent=Decimal("10")),
+    ]
 
-    holders = _load_shareholders_safe()
-    holder_names_lower = {h.name.lower() for h in holders}
-    carry_state = _load_carry_safe()
+    cp_by_name: Dict[str, Counterparty] = {}
+    for h in holders:
+        cp, _ = Counterparty.objects.get_or_create(name=h.name, defaults={"contact": ""})
+        cp_by_name[h.name.lower()] = cp
+
+    account_choices = [
+        (Transaction.Account.CASH, dict(Transaction.Account.choices).get(Transaction.Account.CASH)),
+        (Transaction.Account.BANK, dict(Transaction.Account.choices).get(Transaction.Account.BANK)),
+    ]
 
     if request.method == "POST":
-        action = request.POST.get("action")
-        if action == "add_cp_tx":
+        if request.POST.get("action") == "add_take":
             try:
-                cp = Counterparty.objects.filter(id=request.POST.get("counterparty_id")).first()
-                if not cp:
-                    raise ValueError("Cari bulunamadı.")
-                amount = Decimal(request.POST.get("amount", "0") or "0")
+                amount = Decimal(str(request.POST.get("amount", "0") or "0"))
                 if amount <= 0:
-                    raise ValueError("Tutar sıfır olamaz.")
-                direction = request.POST.get("direction", Transaction.Direction.OUT)
+                    raise ValueError("Tutar 0 olamaz.")
+                cp_id = request.POST.get("counterparty_id")
+                cp = Counterparty.objects.filter(id=cp_id).first()
+                if not cp:
+                    raise ValueError("Hissedar bulunamad?.")
                 account = request.POST.get("account", Transaction.Account.CASH)
                 if account not in dict(Transaction.Account.choices):
                     account = Transaction.Account.CASH
                 description = request.POST.get("description", "").strip()
                 Transaction.objects.create(
-                    direction=direction,
+                    direction=Transaction.Direction.OUT,
                     account=account,
                     amount=amount,
-                    description=description,
+                    description=description or "Hissedar ?demesi",
                     counterparty=cp,
                     timestamp=_now(),
                     approved=True,
                 )
-                message = "Cari hareket eklendi."
+                message = "Kay?t eklendi."
             except Exception as exc:  # noqa: BLE001
                 error = str(exc)
 
-    all_cps = list(Counterparty.objects.all())
-    shareholder_cps_ids = [cp.id for cp in all_cps if cp.name.lower() in holder_names_lower]
-    shareholder_cps = Counterparty.objects.filter(id__in=shareholder_cps_ids)
-    # Hissedar carilerine ait eski onaysız kayıtlar varsa dahil et
-    transactions = Transaction.objects.filter(Q(approved=True) | Q(counterparty__in=shareholder_cps))
+    transactions = Transaction.objects.filter(approved=True)
     cash_net = _account_totals(transactions.filter(account=Transaction.Account.CASH))["net"]
     bank_net = _account_totals(transactions.filter(account=Transaction.Account.BANK))["net"]
-    shareholder_borc_total = (
-        transactions.filter(counterparty__in=shareholder_cps, direction=Transaction.Direction.OUT)
-        .aggregate(total=Sum("amount"))
-        .get("total")
-        or Decimal("0")
-    )
-    shareholder_odenen_total = (
-        transactions.filter(counterparty__in=shareholder_cps, direction=Transaction.Direction.IN)
-        .aggregate(total=Sum("amount"))
-        .get("total")
-        or Decimal("0")
-    )
 
-    distribution_cash = cash_net
-    distribution_bank = bank_net
-    distribution_total = distribution_cash + distribution_bank + shareholder_borc_total
+    takes_qs = transactions.filter(counterparty__name__in=[h.name for h in holders])
+    total_taken = _sum_amount(takes_qs, Transaction.Direction.OUT)
+    total_pool = cash_net + bank_net + total_taken
 
-    payouts, payout_error = _shareholder_payouts(distribution_total, carry_state, holders)
-    if payout_error:
-        error = payout_error
+    cards = []
+    for h in holders:
+        cp = cp_by_name.get(h.name.lower())
+        taken_qs = transactions.filter(counterparty=cp)
+        taken = _sum_amount(taken_qs, Transaction.Direction.OUT)
+        share_value = (total_pool * h.percent) / Decimal("100")
+        net_due = share_value - taken
+        cards.append(
+            {
+                "id": cp.id if cp else None,
+                "name": h.name,
+                "percent": h.percent,
+                "share_value": share_value,
+                "taken": taken,
+                "net_due": net_due,
+            }
+        )
 
-    shareholder_counterparties = []
-    cp_by_name = {cp.name.lower(): cp for cp in all_cps if cp.name.lower() in holder_names_lower}
-    for holder in holders:
-        cp = cp_by_name.get(holder.name.lower())
-        if cp:
-            totals = _account_totals(Transaction.objects.filter(counterparty=cp))
-            shareholder_counterparties.append(
-                {
-                    "id": cp.id,
-                    "name": cp.name,
-                    "contact": cp.contact,
-                    "net": totals["net"],
-                    "incoming": totals["incoming"],
-                    "outgoing": totals["outgoing"],
-                }
-            )
-        else:
-            shareholder_counterparties.append(
-                {
-                    "id": None,
-                    "name": holder.name,
-                    "contact": "",
-                    "net": Decimal("0"),
-                    "incoming": Decimal("0"),
-                    "outgoing": Decimal("0"),
-                }
-            )
-
-    history = []
     context = {
-        "month": month_label,
-        "payouts": payouts,
         "message": message,
         "error": error,
-        "display_total_net": cash_net + bank_net,
-        "display_cash_net": cash_net,
-        "display_bank_net": bank_net,
-        "distribution_total": distribution_total,
-        "distribution_cash": distribution_cash,
-        "distribution_bank": distribution_bank,
-        "shareholder_out_total": shareholder_borc_total,
-        "shareholder_in_total": shareholder_odenen_total,
-        "shareholder_counterparties": shareholder_counterparties,
-        "history": history,
+        "cards": cards,
+        "cash_net": cash_net,
+        "bank_net": bank_net,
+        "total_taken": total_taken,
+        "total_pool": total_pool,
+        "account_choices": account_choices,
     }
     return render(request, "ledger/stocks.html", context)
-
 # -------------------------------
 
 
@@ -861,7 +852,7 @@ def summary(request):
         .order_by("-amount")
     ):
         income_rows.append(
-            {"name": row["description"] or "Di şer", "amount": row["amount"], "percent": float(row["amount"] / income_total * 100) if income_total else 0}
+            {"name": row["description"] or "Kategorisiz", "amount": row["amount"], "percent": float(row["amount"] / income_total * 100) if income_total else 0}
         )
 
     expense_rows = []
@@ -874,7 +865,7 @@ def summary(request):
         amt = row["amount"]
         expense_rows.append(
             {
-                "name": row["description"] or "Di şer",
+                "name": row["description"] or "Kategorisiz",
                 "amount": amt,
                 "display_amount": amt.copy_abs() if hasattr(amt, "copy_abs") else abs(amt),
                 "percent": float(amt / expense_total * 100) if expense_total else 0,

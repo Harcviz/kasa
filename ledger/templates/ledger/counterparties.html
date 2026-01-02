@@ -65,26 +65,28 @@
                 <span class="text-xs text-slate-400">{{ summaries|length }} kayıt</span>
             </div>
             <div class="flex items-center gap-3 text-sm flex-wrap">
-                <select id="cp-quick-select" class="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2">
-                    <option value="">Cari seç</option>
-                    {% for c in summaries %}
-                        <option value="{{ c.id }}"
-                                data-name="{{ c.name|escapejs }}"
-                                data-contact="{{ c.contact|default:''|escapejs }}"
-                                data-tax="{{ c.tax_id|default:''|escapejs }}"
-                                data-address="{{ c.address|default:''|escapejs }}"
-                                data-iban="{{ c.iban|default:''|escapejs }}"
-                                data-person="{{ c.contact_person|default:''|escapejs }}"
-                                data-website="{{ c.website|default:''|escapejs }}"
-                                data-notes="{{ c.notes|default:''|escapejs }}"
-                                data-incoming="{{ c.incoming|default_if_none:0|money }}"
-                                data-outgoing="{{ c.outgoing|default_if_none:0|money }}"
-                                data-net="{{ c.net|default_if_none:0|money }}">
-                            {{ c.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-                <button id="cp-quick-open" type="button" class="px-3 py-2 rounded bg-white/10 border border-white/15 hover:bg-white/15">Cari seç ve detay</button>
+                <form method="get" class="flex items-center gap-2">
+                    <select id="cp-quick-select" name="cp" class="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2" onchange="this.form.submit()">
+                        <option value="">Cari seç</option>
+                        {% for c in summaries %}
+                            <option value="{{ c.id }}"
+                                    {% if cp_filter == c.id %}selected{% endif %}
+                                    data-name="{{ c.name|escapejs }}"
+                                    data-contact="{{ c.contact|default:''|escapejs }}"
+                                    data-tax="{{ c.tax_id|default:''|escapejs }}"
+                                    data-address="{{ c.address|default:''|escapejs }}"
+                                    data-iban="{{ c.iban|default:''|escapejs }}"
+                                    data-person="{{ c.contact_person|default:''|escapejs }}"
+                                    data-website="{{ c.website|default:''|escapejs }}"
+                                    data-notes="{{ c.notes|default:''|escapejs }}"
+                                    data-incoming="{{ c.incoming|default_if_none:0|money }}"
+                                    data-outgoing="{{ c.outgoing|default_if_none:0|money }}"
+                                    data-net="{{ c.net|default_if_none:0|money }}">
+                                {{ c.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </form>
             </div>
             <div class="grid md:grid-cols-2 gap-3">
                 {% for c in summaries %}
@@ -116,13 +118,13 @@
                         </div>
                         <div class="flex flex-wrap items-center gap-2 text-xs">
                             <span class="px-2 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-200">
-                                Borç / Verecek: {{ c.incoming|default_if_none:0|money }}
+                                Borç: {{ c.incoming|default_if_none:0|money }}
                             </span>
                             <span class="px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-200">
-                                Ödenen / Alacak: {{ c.outgoing|default_if_none:0|money }}
+                                Ödenen: {{ c.outgoing|default_if_none:0|money }}
                             </span>
                             <span class="text-sm px-2 py-1 rounded-full bg-white/5 {% if c.net >= 0 %}text-emerald-300{% else %}text-rose-300{% endif %}">
-                                Net: {{ c.net|default_if_none:0|money }}
+                                Kalan: {{ c.net|default_if_none:0|money }}
                             </span>
                         </div>
                     </div>
@@ -171,6 +173,60 @@
         </div>
     </div>
 
+    <div class="glass rounded-xl p-5 border border-emerald-400/20 space-y-4 mt-4">
+        <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold">Cari için Borç / Ödeme</h3>
+            <span class="text-xs text-slate-400">Borç: kasa etkilenmez. Ödeme: seçtiğin kasa/bankadan düşer.</span>
+        </div>
+        <form method="post" class="space-y-3" id="cp-add-tx-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_tx">
+            <div class="grid md:grid-cols-3 gap-3">
+                <label class="block text-sm space-y-1 md:col-span-2">
+                    <span>Cari</span>
+                    <select id="cp-add-select" name="counterparty" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2" required>
+                        <option value="">Cari seç</option>
+                        {% for c in counterparties %}
+                            <option value="{{ c.id }}">{{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label class="block text-sm space-y-1">
+                    <span>İşlem</span>
+                    <div class="flex gap-2">
+                        <label class="flex items-center gap-1 px-2 py-2 rounded-lg bg-white/5 border border-white/10 text-xs">
+                            <input type="radio" name="direction" value="IN" class="accent-emerald-500" checked>
+                            <span>Borç</span>
+                        </label>
+                        <label class="flex items-center gap-1 px-2 py-2 rounded-lg bg-white/5 border border-white/10 text-xs">
+                            <input type="radio" name="direction" value="OUT" class="accent-emerald-500">
+                            <span>Ödeme</span>
+                        </label>
+                    </div>
+                </label>
+            </div>
+            <div class="grid md:grid-cols-3 gap-3">
+                <label class="block text-sm space-y-1">
+                    <span>Tutar (TL)</span>
+                    <input type="number" step="0.01" name="amount" required class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2" placeholder="0,00">
+                </label>
+                <label class="block text-sm space-y-1">
+                    <span>Kasa (Ödeme için)</span>
+                    <select id="cp-add-account" name="account" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2">
+                        <option value="CASH">Nakit</option>
+                        <option value="BANK">Banka</option>
+                    </select>
+                </label>
+                <label class="block text-sm space-y-1 md:col-span-1">
+                    <span>Açıklama</span>
+                    <input type="text" name="description" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2" placeholder="İsteğe bağlı">
+                </label>
+            </div>
+            <div class="text-xs text-slate-400">Borç seçildiğinde hesap NONE, ödeme seçildiğinde seçilen hesap kullanılır.</div>
+            <button type="submit" class="px-5 py-2 rounded-lg bg-emerald-500 text-black font-semibold hover:bg-emerald-400 transition">Kaydet</button>
+        </form>
+    </div>
+
     <div id="cp-detail-overlay" class="hidden fixed inset-0 z-40 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center px-4">
         <div class="glass w-full max-w-2xl rounded-xl border border-white/10 shadow-2xl p-6 space-y-3">
             <div class="flex items-center justify-between gap-3 flex-wrap">
@@ -180,7 +236,6 @@
                 </div>
                 <div class="flex items-center gap-2 flex-wrap">
                     <button id="cp-detail-edit" type="button" class="px-3 py-1 rounded bg-white/10 border border-white/15 text-sm hover:bg-white/15">Düzenle</button>
-                    <button id="cp-detail-print" class="px-3 py-1 rounded bg-emerald-500 text-black text-sm font-semibold hover:bg-emerald-400">Yazdır</button>
                     <button id="cp-detail-close" class="px-3 py-1 rounded bg-white/10 border border-white/15 text-sm hover:bg-white/15">Kapat</button>
                 </div>
             </div>
@@ -260,245 +315,6 @@
         </div>
     </div>
 
-    <div class="glass rounded-xl p-5 border border-emerald-400/20 space-y-4 mt-4">
-        <div class="flex items-center justify-between">
-            <h3 class="text-lg font-semibold">Cari için Borç / Ödeme</h3>
-            <span class="text-xs text-slate-400">Cari opsiyoneldir; seçilmezse genel kasa hareketi olarak eklenir.</span>
-        </div>
-        <form method="post" class="space-y-3">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="add_tx">
-            <div class="grid md:grid-cols-4 gap-3">
-                <label class="block text-sm space-y-1 md:col-span-2">
-                    <span>Cari</span>
-                    <select id="cp-select" name="counterparty" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2">
-                        <option value="">Cari seç (opsiyonel)</option>
-                        {% for c in counterparties %}
-                            <option value="{{ c.id }}">{{ c.name }}</option>
-                        {% endfor %}
-                    </select>
-                </label>
-                <label class="block text-sm space-y-1">
-                    <span>Hesap</span>
-                    <select name="account" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2">
-                        {% for a in accounts %}
-                            <option value="{{ a.value }}">{{ a.label }}</option>
-                        {% endfor %}
-                    </select>
-                </label>
-                <label class="block text-sm space-y-1">
-                    <span>İşlem</span>
-                    <select name="direction" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2">
-                        {% for d in directions %}
-                            <option value="{{ d.value }}">
-                                {% if d.value == 'IN' %}Borç{% else %}Ödeme{% endif %}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </label>
-            </div>
-            <div class="flex items-center gap-2 text-sm flex-wrap">
-                <button type="button" id="btn-borc" class="px-3 py-2 rounded bg-rose-500/20 border border-rose-500/40 text-rose-100 hover:bg-rose-500/30">Borç gir</button>
-                <button type="button" id="btn-odeme" class="px-3 py-2 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-100 hover:bg-emerald-500/30">Ödeme gir</button>
-                <span class="text-xs text-slate-400">Borç girişi kasaya işlemez; ödeme seçince kasa/banka düşer.</span>
-            </div>
-            <div class="grid md:grid-cols-3 gap-3">
-                <label class="block text-sm space-y-1">
-                    <span>Tutar</span>
-                    <input type="number" step="0.01" name="amount" required class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2" placeholder="0.00">
-                </label>
-                <label class="block text-sm space-y-1 md:col-span-2">
-                    <span>Açıklama</span>
-                    <input type="text" name="description" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2" placeholder="Örn: borç alındı, ödeme yapıldı">
-                </label>
-            </div>
-            <button type="submit" class="px-5 py-2 rounded-lg bg-emerald-500 text-black font-semibold hover:bg-emerald-400 transition">Kaydet</button>
-        </form>
-    </div>
-
-    <div class="glass rounded-xl p-5 border border-emerald-400/20 space-y-4 mt-4">
-        <div class="flex items-center justify-between gap-3 flex-wrap">
-            <h3 class="text-lg font-semibold">Cari için Borç / Ödeme</h3>
-            <div class="flex gap-2 flex-wrap items-center">
-                <select id="cp-print-select" class="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm">
-                    <option value="all">Tümü</option>
-                    {% for c in counterparties %}
-                        <option value="{{ c.id }}">{{ c.name }}</option>
-                    {% endfor %}
-                </select>
-                <select id="cp-print-orientation" class="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm">
-                    <option value="portrait">Dikey</option>
-                    <option value="landscape">Yatay</option>
-                </select>
-                <button type="button" onclick="printCounterparties()" class="px-4 py-2 rounded-lg bg-emerald-500 text-black font-semibold hover:bg-emerald-400">Yazdır</button>
-            </div>
-        </div>
-        <p class="text-xs text-slate-400">Cari özetlerini yazıcıdan almak için yukarıdaki butonu kullanın. İsterseniz tek bir cari seçip tarihleriyle birlikte yazdırabilirsiniz.</p>
-    </div>
-
-    <div id="cp-print-all" class="hidden">
-        <h2>Genel Cari Özet</h2>
-        <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:6px;">
-            <thead>
-                <tr>
-                    <th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:6px;">Cari</th>
-                    <th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:6px;">İletişim</th>
-                    <th style="text-align:right;border-bottom:1px solid #e5e7eb;padding:6px;">Gelir</th>
-                    <th style="text-align:right;border-bottom:1px solid #e5e7eb;padding:6px;">Gider</th>
-                    <th style="text-align:right;border-bottom:1px solid #e5e7eb;padding:6px;">Net</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for cp in cp_print_data %}
-                    <tr>
-                        <td style="padding:6px;border-bottom:1px solid #e5e7eb;">{{ cp.name }}</td>
-                        <td style="padding:6px;border-bottom:1px solid #e5e7eb;">{{ cp.contact|default:"-" }}</td>
-                        <td style="padding:6px;text-align:right;border-bottom:1px solid #e5e7eb;">{{ cp.incoming|money }} ₺</td>
-                        <td style="padding:6px;text-align:right;border-bottom:1px solid #e5e7eb;">{{ cp.outgoing|money }} ₺</td>
-                        <td style="padding:6px;text-align:right;border-bottom:1px solid #e5e7eb;">{{ cp.net|money }} ₺</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        <h3 style="margin-top:16px;">Aylık Özet (Cari bazlı)</h3>
-        {% for cp in cp_monthly %}
-            <div style="margin-top:8px;">
-                <strong>{{ cp.name }}</strong>
-                <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:4px;">
-                    <thead>
-                        <tr>
-                            <th style="text-align:left;padding:4px;border-bottom:1px solid #e5e7eb;">Ay</th>
-                            <th style="text-align:right;padding:4px;border-bottom:1px solid #e5e7eb;">Gelir</th>
-                            <th style="text-align:right;padding:4px;border-bottom:1px solid #e5e7eb;">Gider</th>
-                            <th style="text-align:right;padding:4px;border-bottom:1px solid #e5e7eb;">Net</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for m in cp.months %}
-                            <tr>
-                                <td style="padding:4px;border-bottom:1px solid #e5e7eb;">{{ m.name }}</td>
-                                <td style="padding:4px;text-align:right;border-bottom:1px solid #e5e7eb;">{{ m.incoming|money }} ₺</td>
-                                <td style="padding:4px;text-align:right;border-bottom:1px solid #e5e7eb;">{{ m.outgoing|money }} ₺</td>
-                                <td style="padding:4px;text-align:right;border-bottom:1px solid #e5e7eb;">{{ m.net|money }} ₺</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% endfor %}
-
-        <h3 style="margin-top:16px;">İşlem Listesi (tarihli)</h3>
-        {% for item in cp_tx_map %}
-            <div style="margin-top:8px;">
-                <strong>{{ item.name }}</strong>
-                <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:4px;">
-                    <thead>
-                        <tr>
-                            <th style="text-align:left;padding:4px;border-bottom:1px solid #e5e7eb;">Tarih</th>
-                            <th style="text-align:left;padding:4px;border-bottom:1px solid #e5e7eb;">Açıklama</th>
-                            <th style="text-align:left;padding:4px;border-bottom:1px solid #e5e7eb;">Yön</th>
-                            <th style="text-align:right;padding:4px;border-bottom:1px solid #e5e7eb;">Tutar</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for tx in item.transactions %}
-                            <tr>
-                                <td style="padding:4px;border-bottom:1px solid #e5e7eb;">{{ tx.timestamp|date:"d.m.Y H:i" }}</td>
-                                <td style="padding:4px;border-bottom:1px solid #e5e7eb;">{{ tx.description|default:"-" }}</td>
-                                <td style="padding:4px;border-bottom:1px solid #e5e7eb;">{% if tx.direction == 'IN' %}Gelir{% else %}Gider{% endif %}</td>
-                                <td style="padding:4px;text-align:right;border-bottom:1px solid #e5e7eb;">{% if tx.direction == 'OUT' %}-{% endif %}{{ tx.amount|money }} ₺</td>
-                            </tr>
-                        {% empty %}
-                            <tr><td colspan="4" style="padding:4px;text-align:center;border-bottom:1px solid #e5e7eb;">Hareket yok</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% endfor %}
-    </div>
-
-    {% for cp in cp_print_data %}
-        <div id="cp-print-{{ cp.id }}" class="hidden">
-            <h2>{{ cp.name }} - Cari Özet</h2>
-            <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:6px;">
-                <thead>
-                    <tr>
-                        <th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:6px;">Cari</th>
-                        <th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:6px;">İletişim</th>
-                        <th style="text-align:right;border-bottom:1px solid #e5e7eb;padding:6px;">Gelir</th>
-                        <th style="text-align:right;border-bottom:1px solid #e5e7eb;padding:6px;">Gider</th>
-                        <th style="text-align:right;border-bottom:1px solid #e5e7eb;padding:6px;">Net</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td style="padding:6px;border-bottom:1px solid #e5e7eb;">{{ cp.name }}</td>
-                        <td style="padding:6px;border-bottom:1px solid #e5e7eb;">{{ cp.contact|default:"-" }}</td>
-                        <td style="padding:6px;text-align:right;border-bottom:1px solid #e5e7eb;">{{ cp.incoming|money }} ₺</td>
-                        <td style="padding:6px;text-align:right;border-bottom:1px solid #e5e7eb;">{{ cp.outgoing|money }} ₺</td>
-                        <td style="padding:6px;text-align:right;border-bottom:1px solid #e5e7eb;">{{ cp.net|money }} ₺</td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <h3 style="margin-top:12px;">Aylık Özet</h3>
-            {% for entry in cp_monthly %}
-                {% if entry.id == cp.id %}
-                    <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:6px;">
-                        <thead>
-                            <tr>
-                                <th style="text-align:left;padding:4px;border-bottom:1px solid #e5e7eb;">Ay</th>
-                                <th style="text-align:right;padding:4px;border-bottom:1px solid #e5e7eb;">Gelir</th>
-                                <th style="text-align:right;padding:4px;border-bottom:1px solid #e5e7eb;">Gider</th>
-                                <th style="text-align:right;padding:4px;border-bottom:1px solid #e5e7eb;">Net</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for m in entry.months %}
-                                <tr>
-                                    <td style="padding:4px;border-bottom:1px solid #e5e7eb;">{{ m.name }}</td>
-                                    <td style="padding:4px;text-align:right;border-bottom:1px solid #e5e7eb;">{{ m.incoming|money }} ₺</td>
-                                    <td style="padding:4px;text-align:right;border-bottom:1px solid #e5e7eb;">{{ m.outgoing|money }} ₺</td>
-                                    <td style="padding:4px;text-align:right;border-bottom:1px solid #e5e7eb;">{{ m.net|money }} ₺</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                {% endif %}
-            {% endfor %}
-
-            <h3 style="margin-top:12px;">İşlem Listesi (tarihli)</h3>
-            {% for item in cp_tx_map %}
-                {% if item.id == cp.id %}
-                    <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:6px;">
-                        <thead>
-                            <tr>
-                                <th style="text-align:left;padding:4px;border-bottom:1px solid #e5e7eb;">Tarih</th>
-                                <th style="text-align:left;padding:4px;border-bottom:1px solid #e5e7eb;">Açıklama</th>
-                                <th style="text-align:left;padding:4px;border-bottom:1px solid #e5e7eb;">Yön</th>
-                                <th style="text-align:right;padding:4px;border-bottom:1px solid #e5e7eb;">Tutar</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for tx in item.transactions %}
-                                <tr>
-                                    <td style="padding:4px;border-bottom:1px solid #e5e7eb;">{{ tx.timestamp|date:"d.m.Y H:i" }}</td>
-                                    <td style="padding:4px;border-bottom:1px solid #e5e7eb;">{{ tx.description|default:"-" }}</td>
-                                    <td style="padding:4px;border-bottom:1px solid #e5e7eb;">{% if tx.direction == 'IN' %}Gelir{% else %}Gider{% endif %}</td>
-                                    <td style="padding:4px;text-align:right;border-bottom:1px solid #e5e7eb;">{% if tx.direction == 'OUT' %}-{% endif %}{{ tx.amount|money }} ₺</td>
-                                </tr>
-                            {% empty %}
-                                <tr><td colspan="4" style="padding:4px;text-align:center;border-bottom:1px solid #e5e7eb;">Hareket yok</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                {% endif %}
-            {% endfor %}
-        </div>
-    {% endfor %}
-
-    <!-- Cari detay overlay -->
     <div id="cp-detail-overlay" class="hidden fixed inset-0 z-40 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center px-4">
         <div class="glass w-full max-w-2xl rounded-xl border border-white/10 shadow-2xl p-6 space-y-3">
             <div class="flex items-center justify-between">
@@ -703,23 +519,17 @@
         })();
 
         // Borç/Ödeme hızlı tuşları (kasa dışı/ kasa)
-        (function attachDebtButtons() {
-            const dir = document.querySelector('select[name="direction"]');
-            const acc = document.querySelector('select[name="account"]');
-            const btnDebt = document.getElementById('btn-borc');
-            const btnPay = document.getElementById('btn-odeme');
-            if (!dir || !acc || !btnDebt || !btnPay) return;
-            btnDebt.addEventListener('click', () => {
-                dir.value = 'IN';
-                const noneOpt = acc.querySelector('option[value="NONE"]');
-                if (noneOpt) acc.value = 'NONE';
-            });
-            btnPay.addEventListener('click', () => {
-                dir.value = 'OUT';
-                // ödeme için ilk kasa seçeneğine dön
-                const cashOpt = acc.querySelector('option[value="CASH"]') || acc.options[0];
-                if (cashOpt) acc.value = cashOpt.value;
-            });
+        (function attachCpAddForm() {
+            const dirInputs = document.querySelectorAll('#cp-add-tx-form input[name="direction"]');
+            const accSelect = document.getElementById('cp-add-account');
+            const toggleAccount = () => {
+                const dir = Array.from(dirInputs).find((i) => i.checked)?.value;
+                if (!accSelect || !dir) return;
+                accSelect.disabled = dir === 'IN';
+                accSelect.classList.toggle('opacity-50', dir === 'IN');
+            };
+            dirInputs.forEach((input) => input.addEventListener('change', toggleAccount));
+            toggleAccount();
         })();
     </script>
 {% endblock %}
