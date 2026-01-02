@@ -1,12 +1,19 @@
 from django.contrib import admin
 
-from .models import Counterparty, CounterpartyAudit, Transaction, TransactionAudit
+from .models import Counterparty, CounterpartyAudit, Shareholder, Transaction, TransactionAudit
 
 
 @admin.register(Counterparty)
 class CounterpartyAdmin(admin.ModelAdmin):
     list_display = ("name", "contact", "created_at")
     search_fields = ("name", "contact")
+
+
+@admin.register(Shareholder)
+class ShareholderAdmin(admin.ModelAdmin):
+    list_display = ("name", "percent", "active", "created_at")
+    list_filter = ("active",)
+    search_fields = ("name",)
 
 
 @admin.register(Transaction)

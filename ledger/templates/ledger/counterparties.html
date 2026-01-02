@@ -65,7 +65,6 @@
                 <span class="text-xs text-slate-400">{{ summaries|length }} kayıt</span>
             </div>
             <div class="flex items-center gap-3 text-sm flex-wrap">
-<<<<<<< HEAD
                 <form method="get" class="flex items-center gap-2">
                     <select id="cp-quick-select" name="cp" class="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2" onchange="this.form.submit()">
                         <option value="">Cari seç</option>
@@ -88,28 +87,6 @@
                         {% endfor %}
                     </select>
                 </form>
-=======
-                <select id="cp-quick-select" class="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2">
-                    <option value="">Cari seç</option>
-                    {% for c in summaries %}
-                        <option value="{{ c.id }}"
-                                data-name="{{ c.name|escapejs }}"
-                                data-contact="{{ c.contact|default:''|escapejs }}"
-                                data-tax="{{ c.tax_id|default:''|escapejs }}"
-                                data-address="{{ c.address|default:''|escapejs }}"
-                                data-iban="{{ c.iban|default:''|escapejs }}"
-                                data-person="{{ c.contact_person|default:''|escapejs }}"
-                                data-website="{{ c.website|default:''|escapejs }}"
-                                data-notes="{{ c.notes|default:''|escapejs }}"
-                                data-incoming="{{ c.incoming|default_if_none:0|money }}"
-                                data-outgoing="{{ c.outgoing|default_if_none:0|money }}"
-                                data-net="{{ c.net|default_if_none:0|money }}">
-                            {{ c.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-                <button id="cp-quick-open" type="button" class="px-3 py-2 rounded bg-white/10 border border-white/15 hover:bg-white/15">Cari seç ve detay</button>
->>>>>>> c18b61f90a5a9f52613ba43b4f8d6a85eac8b0e1
             </div>
             <div class="grid md:grid-cols-2 gap-3">
                 {% for c in summaries %}
@@ -141,7 +118,6 @@
                         </div>
                         <div class="flex flex-wrap items-center gap-2 text-xs">
                             <span class="px-2 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-200">
-<<<<<<< HEAD
                                 Borç: {{ c.incoming|default_if_none:0|money }}
                             </span>
                             <span class="px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-200">
@@ -149,15 +125,6 @@
                             </span>
                             <span class="text-sm px-2 py-1 rounded-full bg-white/5 {% if c.net >= 0 %}text-emerald-300{% else %}text-rose-300{% endif %}">
                                 Kalan: {{ c.net|default_if_none:0|money }}
-=======
-                                Borç / Verecek: {{ c.incoming|default_if_none:0|money }}
-                            </span>
-                            <span class="px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-200">
-                                Ödenen / Alacak: {{ c.outgoing|default_if_none:0|money }}
-                            </span>
-                            <span class="text-sm px-2 py-1 rounded-full bg-white/5 {% if c.net >= 0 %}text-emerald-300{% else %}text-rose-300{% endif %}">
-                                Net: {{ c.net|default_if_none:0|money }}
->>>>>>> c18b61f90a5a9f52613ba43b4f8d6a85eac8b0e1
                             </span>
                         </div>
                     </div>
@@ -203,109 +170,13 @@
                     <p id="inline-notes" class="text-slate-200 text-sm"></p>
                 </div>
             </div>
-<<<<<<< HEAD
-=======
-        </div>
-    </div>
-
-    <div id="cp-detail-overlay" class="hidden fixed inset-0 z-40 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center px-4">
-        <div class="glass w-full max-w-2xl rounded-xl border border-white/10 shadow-2xl p-6 space-y-3">
-            <div class="flex items-center justify-between gap-3 flex-wrap">
-                <div>
-                    <p class="text-xs text-slate-400">Cari detay</p>
-                    <h3 id="cp-detail-name" class="text-xl font-semibold"></h3>
-                </div>
-                <div class="flex items-center gap-2 flex-wrap">
-                    <button id="cp-detail-edit" type="button" class="px-3 py-1 rounded bg-white/10 border border-white/15 text-sm hover:bg-white/15">Düzenle</button>
-                    <button id="cp-detail-print" class="px-3 py-1 rounded bg-emerald-500 text-black text-sm font-semibold hover:bg-emerald-400">Yazdır</button>
-                    <button id="cp-detail-close" class="px-3 py-1 rounded bg-white/10 border border-white/15 text-sm hover:bg-white/15">Kapat</button>
-                </div>
-            </div>
-            <div class="grid md:grid-cols-2 gap-3 text-sm text-slate-200">
-                <div><span class="text-slate-400 text-xs">İletişim</span><div id="cp-detail-contact" class="font-semibold"></div></div>
-                <div><span class="text-slate-400 text-xs">Sorumlu</span><div id="cp-detail-person"></div></div>
-                <div><span class="text-slate-400 text-xs">Vergi/T.C.</span><div id="cp-detail-tax"></div></div>
-                <div><span class="text-slate-400 text-xs">IBAN</span><div id="cp-detail-iban"></div></div>
-                <div class="md:col-span-2"><span class="text-slate-400 text-xs">Adres</span><div id="cp-detail-address"></div></div>
-                <div class="md:col-span-2"><span class="text-slate-400 text-xs">Website</span><div id="cp-detail-website"></div></div>
-            </div>
-            <div class="grid grid-cols-3 gap-3 text-sm text-slate-200">
-                <div class="glass rounded-lg p-3 border border-white/10">
-                    <p class="text-xs text-slate-400">Borç</p>
-                    <p id="cp-detail-incoming" class="text-rose-300 font-semibold"></p>
-                </div>
-                <div class="glass rounded-lg p-3 border border-white/10">
-                    <p class="text-xs text-slate-400">Ödenen</p>
-                    <p id="cp-detail-outgoing" class="text-emerald-300 font-semibold"></p>
-                </div>
-                <div class="glass rounded-lg p-3 border border-white/10">
-                    <p class="text-xs text-slate-400">Kalan</p>
-                    <p id="cp-detail-net" class="font-semibold"></p>
-                </div>
-            </div>
-            <div>
-                <p class="text-xs text-slate-400">Not</p>
-                <p id="cp-detail-notes" class="text-slate-200 text-sm"></p>
-            </div>
-
-            <div id="cp-edit-form" class="hidden border-t border-white/10 pt-3 mt-3">
-                <form method="post" class="grid md:grid-cols-2 gap-3 text-sm">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="update_cari">
-                    <input type="hidden" name="counterparty_id" id="cp-edit-id">
-                    <label class="space-y-1">
-                        <span>Ad</span>
-                        <input id="cp-edit-name" name="name" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2">
-                    </label>
-                    <label class="space-y-1">
-                        <span>İletişim</span>
-                        <input id="cp-edit-contact" name="contact" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2">
-                    </label>
-                    <label class="space-y-1">
-                        <span>Sorumlu</span>
-                        <input id="cp-edit-person" name="contact_person" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2">
-                    </label>
-                    <label class="space-y-1">
-                        <span>Vergi/T.C.</span>
-                        <input id="cp-edit-tax" name="tax_id" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2">
-                    </label>
-                    <label class="space-y-1">
-                        <span>IBAN</span>
-                        <input id="cp-edit-iban" name="iban" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2">
-                    </label>
-                    <label class="space-y-1 md:col-span-2">
-                        <span>Adres</span>
-                        <input id="cp-edit-address" name="address" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2">
-                    </label>
-                    <label class="space-y-1 md:col-span-2">
-                        <span>Website</span>
-                        <input id="cp-edit-website" name="website" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2">
-                    </label>
-                    <label class="space-y-1 md:col-span-2">
-                        <span>Not</span>
-                        <textarea id="cp-edit-notes" name="notes" rows="3" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2"></textarea>
-                    </label>
-                    <label class="space-y-1 md:col-span-2">
-                        <span>Log notu (isteğe bağlı)</span>
-                        <input name="audit_note" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2">
-                    </label>
-                    <div class="md:col-span-2 flex justify-end">
-                        <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-500 text-black font-semibold hover:bg-emerald-400">Kaydet</button>
-                    </div>
-                </form>
-            </div>
->>>>>>> c18b61f90a5a9f52613ba43b4f8d6a85eac8b0e1
         </div>
     </div>
 
     <div class="glass rounded-xl p-5 border border-emerald-400/20 space-y-4 mt-4">
         <div class="flex items-center justify-between">
             <h3 class="text-lg font-semibold">Cari için Borç / Ödeme</h3>
-<<<<<<< HEAD
             <span class="text-xs text-slate-400">Borç: kasa etkilenmez. Ödeme: seçtiğin kasa/bankadan düşer.</span>
-=======
-            <span class="text-xs text-slate-400">Cari opsiyoneldir; seçilmezse genel kasa hareketi olarak eklenir.</span>
->>>>>>> c18b61f90a5a9f52613ba43b4f8d6a85eac8b0e1
         </div>
         <form method="post" class="space-y-3" id="cp-add-tx-form">
             {% csrf_token %}
@@ -321,7 +192,6 @@
                     </select>
                 </label>
                 <label class="block text-sm space-y-1">
-<<<<<<< HEAD
                     <span>İşlem</span>
                     <div class="flex gap-2">
                         <label class="flex items-center gap-1 px-2 py-2 rounded-lg bg-white/5 border border-white/10 text-xs">
@@ -333,24 +203,6 @@
                             <span>Ödeme</span>
                         </label>
                     </div>
-=======
-                    <span>Hesap</span>
-                    <select name="account" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2">
-                        {% for a in accounts %}
-                            <option value="{{ a.value }}">{{ a.label }}</option>
-                        {% endfor %}
-                    </select>
-                </label>
-                <label class="block text-sm space-y-1">
-                    <span>İşlem</span>
-                    <select name="direction" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2">
-                        {% for d in directions %}
-                            <option value="{{ d.value }}">
-                                {% if d.value == 'IN' %}Borç{% else %}Ödeme{% endif %}
-                            </option>
-                        {% endfor %}
-                    </select>
->>>>>>> c18b61f90a5a9f52613ba43b4f8d6a85eac8b0e1
                 </label>
             </div>
             <div class="flex items-center gap-2 text-sm flex-wrap">
@@ -372,11 +224,7 @@
                 </label>
                 <label class="block text-sm space-y-1 md:col-span-1">
                     <span>Açıklama</span>
-<<<<<<< HEAD
                     <input type="text" name="description" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2" placeholder="İsteğe bağlı">
-=======
-                    <input type="text" name="description" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2" placeholder="Örn: borç alındı, ödeme yapıldı">
->>>>>>> c18b61f90a5a9f52613ba43b4f8d6a85eac8b0e1
                 </label>
             </div>
             <div class="text-xs text-slate-400">Borç seçildiğinde hesap NONE, ödeme seçildiğinde seçilen hesap kullanılır.</div>
@@ -384,7 +232,6 @@
         </form>
     </div>
 
-<<<<<<< HEAD
     <div id="cp-detail-overlay" class="hidden fixed inset-0 z-40 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center px-4">
         <div class="glass w-full max-w-2xl rounded-xl border border-white/10 shadow-2xl p-6 space-y-3">
             <div class="flex items-center justify-between gap-3 flex-wrap">
@@ -469,23 +316,6 @@
                         <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-500 text-black font-semibold hover:bg-emerald-400">Kaydet</button>
                     </div>
                 </form>
-=======
-    <div class="glass rounded-xl p-5 border border-emerald-400/20 space-y-4 mt-4">
-        <div class="flex items-center justify-between gap-3 flex-wrap">
-            <h3 class="text-lg font-semibold">Cari için Borç / Ödeme</h3>
-            <div class="flex gap-2 flex-wrap items-center">
-                <select id="cp-print-select" class="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm">
-                    <option value="all">Tümü</option>
-                    {% for c in counterparties %}
-                        <option value="{{ c.id }}">{{ c.name }}</option>
-                    {% endfor %}
-                </select>
-                <select id="cp-print-orientation" class="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm">
-                    <option value="portrait">Dikey</option>
-                    <option value="landscape">Yatay</option>
-                </select>
-                <button type="button" onclick="printCounterparties()" class="px-4 py-2 rounded-lg bg-emerald-500 text-black font-semibold hover:bg-emerald-400">Yazdır</button>
->>>>>>> c18b61f90a5a9f52613ba43b4f8d6a85eac8b0e1
             </div>
         </div>
     </div>
@@ -733,7 +563,6 @@
         })();
 
         // Borç/Ödeme hızlı tuşları (kasa dışı/ kasa)
-<<<<<<< HEAD
         (function attachCpAddForm() {
             const dirInputs = document.querySelectorAll('#cp-add-tx-form input[name="direction"]');
             const accSelect = document.getElementById('cp-add-account');
@@ -745,25 +574,6 @@
             };
             dirInputs.forEach((input) => input.addEventListener('change', toggleAccount));
             toggleAccount();
-=======
-        (function attachDebtButtons() {
-            const dir = document.querySelector('select[name="direction"]');
-            const acc = document.querySelector('select[name="account"]');
-            const btnDebt = document.getElementById('btn-borc');
-            const btnPay = document.getElementById('btn-odeme');
-            if (!dir || !acc || !btnDebt || !btnPay) return;
-            btnDebt.addEventListener('click', () => {
-                dir.value = 'IN';
-                const noneOpt = acc.querySelector('option[value="NONE"]');
-                if (noneOpt) acc.value = 'NONE';
-            });
-            btnPay.addEventListener('click', () => {
-                dir.value = 'OUT';
-                // ödeme için ilk kasa seçeneğine dön
-                const cashOpt = acc.querySelector('option[value="CASH"]') || acc.options[0];
-                if (cashOpt) acc.value = cashOpt.value;
-            });
->>>>>>> c18b61f90a5a9f52613ba43b4f8d6a85eac8b0e1
         })();
     </script>
 {% endblock %}
