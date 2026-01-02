@@ -109,11 +109,15 @@
                                     data-edit-url="{% url 'counterparties' %}#edit-{{ c.id }}">
                                 {{ c.name }}
                             </button>
-                            <form method="post" onsubmit="return confirm('Bu cariyi silmek istiyor musun?');">
+                            <form method="post">
                                 {% csrf_token %}
                                 <input type="hidden" name="action" value="delete_cari">
                                 <input type="hidden" name="counterparty_id" value="{{ c.id }}">
-                                <button type="submit" class="px-2 py-1 rounded bg-rose-500/20 border border-rose-500/30 text-rose-100 text-xs hover:bg-rose-500/30">Sil</button>
+                                <button type="submit"
+                                        class="px-2 py-1 rounded bg-rose-500/20 border border-rose-500/30 text-rose-100 text-xs hover:bg-rose-500/30"
+                                        data-confirm="Bu cariyi silmek istiyor musun?">
+                                    Sil
+                                </button>
                             </form>
                         </div>
                         <div class="flex flex-wrap items-center gap-2 text-xs">

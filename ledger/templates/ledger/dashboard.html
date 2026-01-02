@@ -94,7 +94,7 @@
                 <div>
                     <p class="text-sm text-slate-300">Genel Bakiye</p>
                     <h3 class="text-3xl font-semibold text-emerald-300">{{ overall_total|money }} ₺</h3>
-                    <p class="text-xs text-slate-400">Tüm hesapların toplamı</p>
+                    <p class="text-xs text-slate-400">Dün devir + bugün net toplamı</p>
                 </div>
                 <div class="space-y-4">
                     {% for card in account_cards %}
@@ -118,7 +118,7 @@
             <div class="glass rounded-xl p-6 border border-emerald-400/20 shadow-lg space-y-4">
                 <div>
                     <p class="text-sm text-slate-300">Devir Özeti</p>
-                    <p class="text-xs text-slate-400">Bir önceki kapanış (Nakit + Banka)</p>
+                    <p class="text-xs text-slate-400">Dünkü net (Nakit + Banka)</p>
                 </div>
                 <div class="space-y-2 text-sm text-slate-300">
                     <div class="flex justify-between">
