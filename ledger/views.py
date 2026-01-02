@@ -643,8 +643,13 @@ def counterparties(request):
             }
         )
 
+<<<<<<< HEAD
     counterparties_qs = [cp for cp in cp_queryset if cp.name.strip().lower() not in excluded_shareholders]
     # Yazd?rma ve se?im i?in detayl? veri
+=======
+    counterparties_qs = Counterparty.objects.exclude(name__in=shareholder_names)
+    # Yazd ▒rma ve se ğim i ğin detayl ▒ veri
+>>>>>>> c18b61f90a5a9f52613ba43b4f8d6a85eac8b0e1
     cp_print_data = []
     cp_monthly = []
     cp_tx_map = []
@@ -661,7 +666,11 @@ def counterparties(request):
                 "net": totals["net"],
             }
         )
+<<<<<<< HEAD
         # ayl?k ozet
+=======
+        # ayl ▒k  ozet
+>>>>>>> c18b61f90a5a9f52613ba43b4f8d6a85eac8b0e1
         months = []
         for row in (
             cp_qs.annotate(month_label=TruncMonth("timestamp"))
@@ -748,6 +757,7 @@ def stocks(request):
         Shareholder(name="Ali Babur", percent=Decimal("10")),
     ]
 
+<<<<<<< HEAD
     cp_by_name: Dict[str, Counterparty] = {}
     for h in holders:
         cp, _ = Counterparty.objects.get_or_create(name=h.name, defaults={"contact": ""})
@@ -757,23 +767,37 @@ def stocks(request):
         (Transaction.Account.CASH, dict(Transaction.Account.choices).get(Transaction.Account.CASH)),
         (Transaction.Account.BANK, dict(Transaction.Account.choices).get(Transaction.Account.BANK)),
     ]
+=======
+    holders = _load_shareholders_safe()
+    holder_names_lower = {h.name.lower() for h in holders}
+    carry_state = _load_carry_safe()
+>>>>>>> c18b61f90a5a9f52613ba43b4f8d6a85eac8b0e1
 
     if request.method == "POST":
         if request.POST.get("action") == "add_take":
             try:
                 amount = Decimal(str(request.POST.get("amount", "0") or "0"))
                 if amount <= 0:
+<<<<<<< HEAD
                     raise ValueError("Tutar 0 olamaz.")
                 cp_id = request.POST.get("counterparty_id")
                 cp = Counterparty.objects.filter(id=cp_id).first()
                 if not cp:
                     raise ValueError("Hissedar bulunamad?.")
+=======
+                    raise ValueError("Tutar sıfır olamaz.")
+                direction = request.POST.get("direction", Transaction.Direction.OUT)
+>>>>>>> c18b61f90a5a9f52613ba43b4f8d6a85eac8b0e1
                 account = request.POST.get("account", Transaction.Account.CASH)
                 if account not in dict(Transaction.Account.choices):
                     account = Transaction.Account.CASH
                 description = request.POST.get("description", "").strip()
                 Transaction.objects.create(
+<<<<<<< HEAD
                     direction=Transaction.Direction.OUT,
+=======
+                    direction=direction,
+>>>>>>> c18b61f90a5a9f52613ba43b4f8d6a85eac8b0e1
                     account=account,
                     amount=amount,
                     description=description or "Hissedar ?demesi",
@@ -785,9 +809,14 @@ def stocks(request):
             except Exception as exc:  # noqa: BLE001
                 error = str(exc)
 
-    transactions = Transaction.objects.filter(approved=True)
+    all_cps = list(Counterparty.objects.all())
+    shareholder_cps_ids = [cp.id for cp in all_cps if cp.name.lower() in holder_names_lower]
+    shareholder_cps = Counterparty.objects.filter(id__in=shareholder_cps_ids)
+    # Hissedar carilerine ait eski onaysız kayıtlar varsa dahil et
+    transactions = Transaction.objects.filter(Q(approved=True) | Q(counterparty__in=shareholder_cps))
     cash_net = _account_totals(transactions.filter(account=Transaction.Account.CASH))["net"]
     bank_net = _account_totals(transactions.filter(account=Transaction.Account.BANK))["net"]
+<<<<<<< HEAD
 
     takes_qs = transactions.filter(counterparty__name__in=[h.name for h in holders])
     total_taken = _sum_amount(takes_qs, Transaction.Direction.OUT)
@@ -811,9 +840,62 @@ def stocks(request):
             }
         )
 
+=======
+    shareholder_borc_total = (
+        transactions.filter(counterparty__in=shareholder_cps, direction=Transaction.Direction.OUT)
+        .aggregate(total=Sum("amount"))
+        .get("total")
+        or Decimal("0")
+    )
+    shareholder_odenen_total = (
+        transactions.filter(counterparty__in=shareholder_cps, direction=Transaction.Direction.IN)
+        .aggregate(total=Sum("amount"))
+        .get("total")
+        or Decimal("0")
+    )
+
+    distribution_cash = cash_net
+    distribution_bank = bank_net
+    distribution_total = distribution_cash + distribution_bank + shareholder_borc_total
+
+    payouts, payout_error = _shareholder_payouts(distribution_total, carry_state, holders)
+    if payout_error:
+        error = payout_error
+
+    shareholder_counterparties = []
+    cp_by_name = {cp.name.lower(): cp for cp in all_cps if cp.name.lower() in holder_names_lower}
+    for holder in holders:
+        cp = cp_by_name.get(holder.name.lower())
+        if cp:
+            totals = _account_totals(Transaction.objects.filter(counterparty=cp))
+            shareholder_counterparties.append(
+                {
+                    "id": cp.id,
+                    "name": cp.name,
+                    "contact": cp.contact,
+                    "net": totals["net"],
+                    "incoming": totals["incoming"],
+                    "outgoing": totals["outgoing"],
+                }
+            )
+        else:
+            shareholder_counterparties.append(
+                {
+                    "id": None,
+                    "name": holder.name,
+                    "contact": "",
+                    "net": Decimal("0"),
+                    "incoming": Decimal("0"),
+                    "outgoing": Decimal("0"),
+                }
+            )
+
+    history = []
+>>>>>>> c18b61f90a5a9f52613ba43b4f8d6a85eac8b0e1
     context = {
         "message": message,
         "error": error,
+<<<<<<< HEAD
         "cards": cards,
         "cash_net": cash_net,
         "bank_net": bank_net,
@@ -822,6 +904,21 @@ def stocks(request):
         "account_choices": account_choices,
     }
     return render(request, "ledger/stocks.html", context)
+=======
+        "display_total_net": cash_net + bank_net,
+        "display_cash_net": cash_net,
+        "display_bank_net": bank_net,
+        "distribution_total": distribution_total,
+        "distribution_cash": distribution_cash,
+        "distribution_bank": distribution_bank,
+        "shareholder_out_total": shareholder_borc_total,
+        "shareholder_in_total": shareholder_odenen_total,
+        "shareholder_counterparties": shareholder_counterparties,
+        "history": history,
+    }
+    return render(request, "ledger/stocks.html", context)
+
+>>>>>>> c18b61f90a5a9f52613ba43b4f8d6a85eac8b0e1
 # -------------------------------
 
 
@@ -852,7 +949,11 @@ def summary(request):
         .order_by("-amount")
     ):
         income_rows.append(
+<<<<<<< HEAD
             {"name": row["description"] or "Kategorisiz", "amount": row["amount"], "percent": float(row["amount"] / income_total * 100) if income_total else 0}
+=======
+            {"name": row["description"] or "Di şer", "amount": row["amount"], "percent": float(row["amount"] / income_total * 100) if income_total else 0}
+>>>>>>> c18b61f90a5a9f52613ba43b4f8d6a85eac8b0e1
         )
 
     expense_rows = []
@@ -865,7 +966,11 @@ def summary(request):
         amt = row["amount"]
         expense_rows.append(
             {
+<<<<<<< HEAD
                 "name": row["description"] or "Kategorisiz",
+=======
+                "name": row["description"] or "Di şer",
+>>>>>>> c18b61f90a5a9f52613ba43b4f8d6a85eac8b0e1
                 "amount": amt,
                 "display_amount": amt.copy_abs() if hasattr(amt, "copy_abs") else abs(amt),
                 "percent": float(amt / expense_total * 100) if expense_total else 0,

@@ -1,8 +1,9 @@
-{% extends "ledger/base.html" %}
+﻿{% extends "ledger/base.html" %}
 {% load money %}
 {% block title %}Hisseler{% endblock %}
 
 {% block content %}
+<<<<<<< HEAD
 <div class="space-y-4">
     <div class="glass rounded-xl p-5 border border-emerald-400/20">
         <div class="flex items-center justify-between flex-wrap gap-3">
@@ -15,8 +16,30 @@
             {% endif %}
             {% if error %}
                 <div class="px-4 py-2 rounded-lg bg-rose-500/20 border border-rose-400/30 text-sm">{{ error }}</div>
+=======
+<div class="flex items-center justify-between mb-3">
+    <div>
+        <p class="text-sm text-slate-300">Hissedar pay dağılımı</p>
+        <h2 class="text-2xl font-semibold">Hisseler</h2>
+        <p class="text-xs text-slate-400">Ay: {{ month }}</p>
+        <p class="text-xs text-slate-400">
+            Dağıtım baz net: {{ distribution_total|money }} TL | Nakit: {{ distribution_cash|money }} TL | Banka: {{ distribution_bank|money }} TL | Hissedar gider: {{ shareholder_out_total|money }} TL
+        </p>
+        <p class="text-xs text-slate-500">Gerçek zamanlı kasa neti: {{ display_total_net|money }} TL (Nakit: {{ display_cash_net|money }} TL, Banka: {{ display_bank_net|money }} TL)</p>
+    </div>
+    <button class="glass px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm print-hide" onclick="printPayouts()">Dökümü Yazdır</button>
+</div>
+
+<div id="print-payouts" class="grid md:grid-cols-4 gap-3 w-full">
+    {% for p in payouts %}
+        <div class="glass rounded-lg p-3 border border-white/10 space-y-2">
+            <p class="text-lg font-semibold text-emerald-200">{{ p.name }}</p>
+            {% if p.contact %}
+            <p class="text-xs text-slate-400">Cari iletişim: {{ p.contact }}</p>
+>>>>>>> c18b61f90a5a9f52613ba43b4f8d6a85eac8b0e1
             {% endif %}
         </div>
+<<<<<<< HEAD
         <div class="grid md:grid-cols-4 gap-3 mt-3 text-sm">
             <div class="glass rounded-lg p-3 border border-white/10">
                 <p class="text-xs text-slate-400">Nakit kasa</p>
@@ -34,6 +57,62 @@
                 <p class="text-xs text-slate-400">Dağıtım havuzu</p>
                 <p class="text-lg font-semibold text-emerald-300">{{ total_pool|money }} TL</p>
             </div>
+=======
+    {% endfor %}
+</div>
+
+{% if shareholder_counterparties %}
+    <div class="border-t border-white/5 pt-4 space-y-2 mt-4">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+            <h3 class="text-lg font-semibold">Hissedar carileri</h3>
+            <span class="text-xs text-slate-400">{{ shareholder_counterparties|length }} cari</span>
+        </div>
+        <div class="grid md:grid-cols-4 gap-3">
+            {% for cp in shareholder_counterparties %}
+                <div class="glass rounded-lg p-3 border border-white/10">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="font-semibold">{{ cp.name }}</p>
+                            <p class="text-xs text-slate-400">{{ cp.contact|default:"-" }}</p>
+                        </div>
+                        <span class="text-sm px-3 py-1 rounded-full bg-white/10 {% if cp.net >= 0 %}text-emerald-300{% else %}text-rose-300{% endif %}">
+                            Net: {{ cp.net|money }} TL
+                        </span>
+                    </div>
+                    <div class="mt-2 grid grid-cols-2 text-xs text-slate-300">
+                        <div>Ödenen<br><span class="text-emerald-300 text-sm font-semibold">{{ cp.incoming|money }} TL</span></div>
+                        <div>Borç<br><span class="text-rose-300 text-sm font-semibold">{{ cp.outgoing|money }} TL</span></div>
+                    </div>
+                    <form method="post" class="mt-3 space-y-2">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="add_cp_tx">
+                        <input type="hidden" name="counterparty_id" value="{{ cp.id }}">
+                        <div class="flex gap-2 text-xs">
+                            <label class="flex items-center gap-1 px-2 py-1 rounded bg-white/5 border border-white/10">
+                                <input type="radio" name="account" value="CASH" checked class="accent-emerald-500">
+                                <span>Nakit</span>
+                            </label>
+                            <label class="flex items-center gap-1 px-2 py-1 rounded bg-white/5 border border-white/10">
+                                <input type="radio" name="account" value="BANK" class="accent-emerald-500">
+                                <span>Banka</span>
+                            </label>
+                        </div>
+                        <label class="text-xs text-slate-400 space-y-1 block">
+                            <span>Tutar (TL)</span>
+                            <input type="number" step="0.01" name="amount" required class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm" placeholder="0,00">
+                        </label>
+                        <label class="text-xs text-slate-400 space-y-1 block">
+                            <span>Açıklama</span>
+                            <input type="text" name="description" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm" placeholder="İsteğe bağlı">
+                        </label>
+                        <div class="flex gap-2">
+                            <button type="submit" name="direction" value="IN" class="flex-1 px-3 py-2 rounded-lg bg-emerald-500 text-black text-sm font-semibold hover:bg-emerald-400">Ödenen ekle</button>
+                            <button type="submit" name="direction" value="OUT" class="flex-1 px-3 py-2 rounded-lg bg-rose-500 text-black text-sm font-semibold hover:bg-rose-400">Borç ekle</button>
+                        </div>
+                    </form>
+                </div>
+            {% endfor %}
+>>>>>>> c18b61f90a5a9f52613ba43b4f8d6a85eac8b0e1
         </div>
     </div>
 
